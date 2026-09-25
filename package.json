@@ -1,0 +1,25 @@
+{
+  "name": "prisma-noticias",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "dev": "npm run build && wrangler dev",
+    "pretest": "npm run build",
+    "deploy": "npm run build && wrangler deploy",
+    "check:deploy": "npm run build && wrangler deploy --dry-run"
+  },
+  "dependencies": {
+    "esbuild": "0.28.2",
+    "fast-xml-parser": "5.11.1",
+    "franc-min": "6.2.0"
+  },
+  "devDependencies": {
+    "wrangler": "4.140.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
