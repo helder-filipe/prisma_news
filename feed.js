@@ -1,0 +1,49 @@
+import {XMLParser,XMLValidator} from 'fast-xml-parser';
+import {francAll} from 'franc-min';
+import {TOPICS,isCertifiedStandardsOnly} from './topics.js';
+const parser=new XMLParser({ignoreAttributes:false,attributeNamePrefix:'@_',parseTagValue:false,trimValues:true,processEntities:true});
+export const normalize=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const text=x=>typeof x==='string'?x:x&&typeof x==='object'?String(x['#text']||''):'';
+export function plain(value){return text(value).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/&(?:amp|lt|gt|quot|apos|nbsp);/g,m=>({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&apos;':"'",'&nbsp;':' '}[m])).replace(/\s+/g,' ').trim();}
+export function safeURL(value){try{const u=new URL(text(value));return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password?u.href:'';}catch{return '';}}
+export function languageOf(title,fallback){
+ const normalized=normalize(title);
+ const ptWords=normalized.match(/\b(recolha|compostagem|residuos|biorresiduos|gestao|municipio|portugues|portuguesa|projeto|sustentabilidade|abastecimento|autarquia|espacos|arborizacao|mobilidade|agua|aguas|lanca|para|dos|das|nao|uma)\b/g)||[];
+ const enWords=normalized.match(/\b(the|and|with|for|from|will|new|waste|water|green|climate|city|cities|recycling)\b/g)||[];
+ if(ptWords.length>=2&&ptWords.length>enWords.length)return {lang:'pt',languageMethod:'title'};
+ const candidates=francAll(title,{minLength:30,only:['por','eng','spa','fra','deu','ita','nld']});
+ const map={por:'pt',eng:'en',spa:'es',fra:'fr',deu:'de',ita:'it',nld:'nl'};
+ const best=candidates[0], second=candidates[1];
+ if(best&&map[best[0]]&&(!second||best[1]-second[1]>.04))return {lang:map[best[0]],languageMethod:'title'};
+ return {lang:fallback,languageMethod:'feed'};
+}
+const practicePattern=/projeto|project|iniciativa|initiative|pilot|solucao|solution|case stud|boas praticas|best practice|inovacao|innovation|implement|lanc|launch|roll.out|transform|reutiliz|reuse|compost|recolha|collection/;
+export function classify(title,description,topic){const content=normalize(title+' '+description);const matched=TOPICS.filter(t=>t.match&&new RegExp(t.match).test(content)&&(!t.sector||new RegExp(t.sector).test(content))&&(t.id!=='normas'||isCertifiedStandardsOnly(title+' '+description))).map(t=>t.id);if(topic.id!=='tudo'&&!matched.includes(topic.id))matched.unshift(topic.id);return [...new Set(matched.length?matched:['ambiente'])];}
+export function parseFeed(xml,def,topic,mode,now=Date.now()){
+ if(xml.length>2_000_000||/<!DOCTYPE|<!ENTITY/i.test(xml))throw new Error('Formato RSS não permitido');
+ if(XMLValidator.validate(xml)!==true)throw new Error('RSS inválido');
+ const doc=parser.parse(xml);const channel=doc.rss?.channel;if(!channel)throw new Error('O endereço não devolveu um feed RSS');
+ let rows=channel.item||[];if(!Array.isArray(rows))rows=[rows];
+ const articles=[];const maxAge=(mode==='praticas'?365:30)*86400000;
+ for(const row of rows.slice(0,100)){
+  const source=plain(row.source)||def.name;let title=plain(row.title);
+  if(title.endsWith(' - '+source))title=title.slice(0,-source.length-3);
+  const url=safeURL(row.link);const ms=Date.parse(text(row.pubDate));
+  if(!title||!url||!Number.isFinite(ms)||ms>now+3600000||now-ms>maxAge)continue;
+  const rawDescription=plain(row.description);
+  // Google descriptions repeat headlines and source links; they are not article summaries.
+  const description=def.kind==='aggregator'?'':rawDescription.slice(0,270).replace(/\s+\S*$/,'')+(rawDescription.length>270?'…':'');
+  const content=normalize(title+' '+description);
+  if(topic.id==='seguranca-trabalho'&&/estagio profissional|oferta de emprego|recrutamento|recruta-se|job vacancy|job opening|hiring now|career opportunit/.test(content))continue;
+  if(topic.id==='normas'&&!isCertifiedStandardsOnly(title+' '+rawDescription))continue;
+  if(topic.sector&&!new RegExp(topic.sector).test(content))continue;
+  if((def.kind==='direct'||topic.strict)&&topic.match&&!new RegExp(topic.match).test(content))continue;
+  if(mode==='praticas'&&!def.practice&&!practicePattern.test(content))continue;
+  const language=languageOf(title,def.lang);
+  let sourceURL=safeURL(row.source?.['@_url'])||safeURL(channel.link);
+  const host=sourceURL?new URL(sourceURL).hostname:'';
+  articles.push({id:url,title,description,url,source,sourceURL,date:new Date(ms).toISOString(),...language,country:host.endsWith('.pt')||def.id==='ambiente-magazine'?'PT':null,topics:classify(title,description,topic),kind:mode==='praticas'?'praticas':'noticias',via:def.kind==='aggregator'?'Google Notícias':'RSS direto'});
+ }
+ return articles;
+}
+export function mergeArticles(groups){const byTitle=new Map();for(const article of groups.flat()){const key=normalize(article.title).replace(/[^a-z0-9]/g,'');const prev=byTitle.get(key);if(!prev){byTitle.set(key,article);continue;}const merged={...(article.via==='RSS direto'?article:prev),topics:[...new Set([...prev.topics,...article.topics])]};byTitle.set(key,merged);}return [...byTitle.values()].sort((a,b)=>b.date.localeCompare(a.date));}
