@@ -19,7 +19,12 @@
   "devDependencies": {
     "wrangler": "4.140.0"
   },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "esbuild@0.28.2": true,
+    "workerd@1.20260923.1": true
+  },
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   }
 }

@@ -12,11 +12,13 @@ Plataforma de notícias em português de Portugal, com interface HTML/CSS/JavaSc
 
 Carregue os ficheiros extraídos, não apenas o ZIP. Não é necessário carregar a pasta `node_modules`: as dependências são instaladas a partir do `package-lock.json`.
 
-## Alojamento: GitHub + Cloudflare Workers
+## Alojamento
 
 O GitHub guarda e versiona o código. O serviço `/api/news` precisa de um ambiente de execução: **esta versão não funciona integralmente apenas com GitHub Pages**, nem abrindo `public/index.html` diretamente no computador.
 
 A configuração incluída permite alojar a interface e a API juntas em **Cloudflare Workers**, sem ter de configurar outro endereço de API. Não é necessário Apps Script. Não existem chaves de notícias ou credenciais no projeto.
+
+Também é possível publicar na **Vercel**: a configuração incluída prepara os ficheiros estáticos e a função `/api/news` para consultar os feeds RSS no servidor. Os avisos sobre `engines` e scripts de instalação foram tratados no `package.json`; as versões de `esbuild` e `workerd` autorizadas para executar os scripts estão fixadas.
 
 ### Publicar ligando o GitHub à Cloudflare
 
@@ -35,6 +37,15 @@ A configuração incluída permite alojar a interface e a API juntas em **Cloudf
 5. Conclua a configuração para publicar no endereço atribuído pela Cloudflare.
 
 As alterações enviadas ao ramo configurado podem ser publicadas automaticamente pela integração Git. Consulte os limites e as condições do seu plano Cloudflare. Esta exportação não inclui o controlo de acesso do ChatGPT: o Worker não tem autenticação própria. Se quiser limitar o acesso, configure-o no alojamento antes de divulgar o endereço.
+
+### Publicar na Vercel
+
+1. Importe o repositório GitHub na Vercel.
+2. Mantenha a raiz do repositório como diretório do projeto.
+3. Use `npm run build` como comando de construção e `dist` como diretório de saída. O ficheiro `vercel.json` já declara estas opções.
+4. Publique. A API fica disponível em `/api/news` e a interface em `/`.
+
+Os feeds são consultados pelo servidor da Vercel. A atualização acontece quando alguém abre a plataforma, muda de tema, pede atualização ou mantém a página aberta; não há uma recolha agendada com a página fechada.
 
 ### Utilizar no computador
 
