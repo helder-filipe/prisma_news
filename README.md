@@ -71,6 +71,10 @@ O login é feito na sua conta Cloudflare; não coloque tokens no repositório.
 ## Funcionalidades incluídas
 
 - Notícias dos últimos 30 dias e projetos/iniciativas do último ano.
+- Filtros de língua separados: Português, English ou Todas.
+- Pesquisas temáticas direcionadas aos sites oficiais ERSAR, APA, Águas de Portugal e APDA; os resultados, quando indexados, abrem na publicação original.
+- Miniaturas de imagem dos feeds quando disponibilizadas pela publicação.
+- Filtro comum de anúncios de emprego e regras de relevância aplicadas a cada categoria.
 - Recolha ao abrir, mudar de tema e a cada 15 minutos enquanto a página está aberta. Não existe uma tarefa de recolha contínua com a página fechada.
 - Pesquisas RSS no Google Notícias em português e inglês, complementadas pelos feeds diretos da Ambiente Magazine e do The Guardian.
 - Pesquisa por texto, ordenação por data e filtro por língua. «Internacional» refere-se à língua do título, não ao país. Em títulos ambíguos, utiliza-se a língua do feed, assinalada com um asterisco.
@@ -114,7 +118,7 @@ Os testes cobrem processamento RSS, língua, datas, duplicados, cache, falhas de
 
 ## Sobre os conteúdos
 
-As notícias pertencem às publicações de origem. A plataforma apresenta títulos, pequenos excertos quando fornecidos e ligações para leitura; não contorna subscrições. Os projetos e boas práticas são encontrados automaticamente e não constituem um ranking ou uma certificação de eficácia. A cobertura depende da disponibilidade dos feeds e da indexação no Google Notícias.
+As notícias pertencem às publicações de origem. A plataforma apresenta títulos, pequenos excertos quando fornecidos e ligações para leitura; não contorna subscrições. Os projetos e boas práticas são encontrados automaticamente e não constituem um ranking ou uma certificação de eficácia. A cobertura depende da disponibilidade dos feeds e da indexação no Google Notícias. As consultas às páginas oficiais de ERSAR, APA, Águas de Portugal e APDA usam pesquisas de domínio no índice do Google Notícias, pois não foi localizado um feed RSS oficial comum para esses sites.
 
 ## Documentação do alojamento
 
