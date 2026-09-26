@@ -70,7 +70,7 @@ O login é feito na sua conta Cloudflare; não coloque tokens no repositório.
 
 ## Funcionalidades incluídas
 
-- Notícias dos últimos 30 dias e projetos/iniciativas do último ano.
+- Um único fluxo de notícias dos últimos 30 dias, ordenado da mais recente para a mais antiga.
 - Filtros de língua separados: Português, Inglês ou Todas. Ao escolher Inglês, toda a interface, a secção Fontes e método e os controlos de partilha/PDF passam para inglês.
 - Pesquisas temáticas direcionadas aos sites oficiais ERSAR, APA, Águas de Portugal e APDA; os resultados, quando indexados, abrem na publicação original.
 - Miniaturas recolhidas do feed RSS e, quando este não as fornece, da imagem de pré-visualização (Open Graph) da página do artigo.
@@ -118,7 +118,7 @@ Os testes cobrem processamento RSS, língua, datas, duplicados, cache, falhas de
 
 ## Sobre os conteúdos
 
-As notícias pertencem às publicações de origem. A plataforma apresenta títulos, pequenos excertos quando fornecidos e ligações para leitura; não contorna subscrições. Os projetos e boas práticas são encontrados automaticamente e não constituem um ranking ou uma certificação de eficácia. A cobertura depende da disponibilidade dos feeds e da indexação no Google Notícias. As consultas às páginas oficiais de ERSAR, APA, Águas de Portugal e APDA usam pesquisas de domínio no índice do Google Notícias, pois não foi localizado um feed RSS oficial comum para esses sites.
+As notícias pertencem às publicações de origem. A plataforma apresenta títulos, pequenos excertos quando fornecidos e ligações para leitura; não contorna subscrições. O Prisma Verde apresenta notícias dos últimos 30 dias num único fluxo, ordenadas por data. A cobertura depende da disponibilidade dos feeds e da indexação no Google Notícias. As consultas às páginas oficiais de ERSAR, APA, Águas de Portugal e APDA usam pesquisas de domínio no índice do Google Notícias, pois não foi localizado um feed RSS oficial comum para esses sites.
 
 ## Documentação do alojamento
 
