@@ -71,7 +71,7 @@ O login é feito na sua conta Cloudflare; não coloque tokens no repositório.
 ## Funcionalidades incluídas
 
 - Notícias dos últimos 30 dias e projetos/iniciativas do último ano.
-- Filtros de língua separados: Português, Inglês ou Todas; ao escolher Inglês, os nomes das categorias também são apresentados em inglês.
+- Filtros de língua separados: Português, Inglês ou Todas. Ao escolher Inglês, toda a interface, a secção Fontes e método e os controlos de partilha/PDF passam para inglês.
 - Pesquisas temáticas direcionadas aos sites oficiais ERSAR, APA, Águas de Portugal e APDA; os resultados, quando indexados, abrem na publicação original.
 - Miniaturas recolhidas do feed RSS e, quando este não as fornece, da imagem de pré-visualização (Open Graph) da página do artigo.
 - Filtro comum de anúncios e portais de emprego (incluindo Net-Empregos e SAPO Empregos), com regras de relevância aplicadas a cada categoria.
