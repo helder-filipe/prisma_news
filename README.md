@@ -1,4 +1,4 @@
-# PRISMA — Notícias em perspetiva
+# Prisma Verde — Notícias em perspetiva
 
 Plataforma de notícias em português de Portugal, com interface HTML/CSS/JavaScript e um serviço JavaScript de recolha RSS. Esta pasta está preparada para ser colocada num repositório GitHub.
 
@@ -71,13 +71,13 @@ O login é feito na sua conta Cloudflare; não coloque tokens no repositório.
 ## Funcionalidades incluídas
 
 - Notícias dos últimos 30 dias e projetos/iniciativas do último ano.
-- Filtros de língua separados: Português, English ou Todas.
+- Filtros de língua separados: Português, Inglês ou Todas; ao escolher Inglês, os nomes das categorias também são apresentados em inglês.
 - Pesquisas temáticas direcionadas aos sites oficiais ERSAR, APA, Águas de Portugal e APDA; os resultados, quando indexados, abrem na publicação original.
-- Miniaturas de imagem dos feeds quando disponibilizadas pela publicação.
-- Filtro comum de anúncios de emprego e regras de relevância aplicadas a cada categoria.
+- Miniaturas recolhidas do feed RSS e, quando este não as fornece, da imagem de pré-visualização (Open Graph) da página do artigo.
+- Filtro comum de anúncios e portais de emprego (incluindo Net-Empregos e SAPO Empregos), com regras de relevância aplicadas a cada categoria.
 - Recolha ao abrir, mudar de tema e a cada 15 minutos enquanto a página está aberta. Não existe uma tarefa de recolha contínua com a página fechada.
 - Pesquisas RSS no Google Notícias em português e inglês, complementadas pelos feeds diretos da Ambiente Magazine e do The Guardian.
-- Pesquisa por texto, ordenação por data e filtro por língua. «Internacional» refere-se à língua do título, não ao país. Em títulos ambíguos, utiliza-se a língua do feed, assinalada com um asterisco.
+- Pesquisa por texto, ordenação por data e filtro por língua. Em títulos ambíguos, utiliza-se a língua do feed, assinalada com um asterisco.
 - Remoção de duplicados e consulta do estado das fontes. A versão anterior de um feed pode ser utilizada, durante até 24 horas, em caso de falha; essa situação é identificada.
 - Partilha no LinkedIn, Facebook, WhatsApp e X, cópia da ligação e partilha nativa quando suportada pelo navegador.
 - Ficha PDF através da janela de impressão: título, excerto disponível, fonte, data e ligação. Não equivale ao texto integral de uma publicação externa.
