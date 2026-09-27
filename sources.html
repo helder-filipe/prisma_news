@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fontes e Método — Prisma Verde</title>
+  <meta name="description" content="Conheça as fontes e os critérios de recolha de notícias do Prisma Verde.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23dcff4f'/%3E%3Cpath d='M8 25V7h10a6 6 0 0 1 0 12h-5v6zm5-11h5a1 1 0 0 0 0-2h-5z' fill='%23151919'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script src="sources.js" defer></script>
+</head>
+<body class="sources-page">
+  <a class="skip" href="#main" id="skip-link">Saltar para o conteúdo</a>
+  <header>
+    <div class="topline"><span id="topline-motto">AMBIENTE · TERRITÓRIO · FUTURO</span><span id="topline-label">PRISMA VERDE</span></div>
+    <div class="masthead">
+      <a href="./" class="logo" aria-label="Prisma Verde, início">Prisma<span class="brand-word">Verde</span><span class="brand-mark">◆</span></a>
+      <div class="signature" id="brand-signature">Fontes.<br>Método.</div>
+      <div class="source-page-controls">
+        <a class="edition" href="./" id="back-news">← Notícias</a>
+        <label class="language-filter"><span id="language-label">Língua</span><select id="language"><option value="pt" id="language-pt">Português</option><option value="en" id="language-en">Inglês</option></select></label>
+      </div>
+    </div>
+  </header>
+  <main id="main" class="sources-main">
+    <div class="sources-intro">
+      <span class="eyebrow" id="page-eyebrow">PRISMA VERDE · TRANSPARÊNCIA EDITORIAL</span>
+      <h1 id="page-title">Fontes e Método</h1>
+      <p id="page-deck">Como recolhemos, selecionamos e apresentamos as notícias.</p>
+    </div>
+    <div class="sources-layout">
+      <section class="method-card" aria-labelledby="method-heading">
+        <h2 id="method-heading">Como funciona</h2>
+        <div id="method-copy"></div>
+      </section>
+      <aside class="source-card" aria-labelledby="source-guide-heading">
+        <h2 id="source-guide-heading">Fontes acompanhadas</h2>
+        <div id="source-guide-copy"></div>
+      </aside>
+    </div>
+    <section class="live-sources" aria-labelledby="live-sources-heading">
+      <div class="live-sources-heading">
+        <div><h2 id="live-sources-heading">Estado das fontes</h2><p id="source-status-note">Disponibilidade na consulta mais recente.</p></div>
+        <button type="button" id="refresh-sources">Atualizar ↻</button>
+      </div>
+      <p id="source-live-status" role="status" aria-live="polite"></p>
+      <div id="source-status-list" class="source-status-list"></div>
+    </section>
+  </main>
+  <footer>
+    <a href="./" class="footer-logo">Prisma Verde◆</a>
+    <span id="footer-tagline">Notícias em perspetiva.</span>
+    <a href="#main" id="footer-top">Voltar ao início ↑</a>
+  </footer>
+</body>
+</html>

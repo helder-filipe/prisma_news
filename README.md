@@ -71,6 +71,8 @@ O login é feito na sua conta Cloudflare; não coloque tokens no repositório.
 ## Funcionalidades incluídas
 
 - Um único fluxo de notícias dos últimos 30 dias, ordenado da mais recente para a mais antiga.
+- Página inicial compacta em telemóveis, com categorias numa faixa horizontal e cores alinhadas com a versão desktop.
+- Página «Fontes e Método» independente, acessível pelo cabeçalho e disponível em português e inglês.
 - Filtros de língua separados: Português, Inglês ou Todas. Ao escolher Inglês, toda a interface, a secção Fontes e método e os controlos de partilha/PDF passam para inglês.
 - Pesquisas temáticas direcionadas aos sites oficiais ERSAR, APA, Águas de Portugal e APDA; os resultados, quando indexados, abrem na publicação original.
 - Miniaturas recolhidas do feed RSS e, quando este não as fornece, da imagem de pré-visualização (Open Graph) da página do artigo.
