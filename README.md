@@ -126,3 +126,7 @@ As notícias pertencem às publicações de origem. A plataforma apresenta títu
 
 - [Configuração Wrangler](https://developers.cloudflare.com/workers/wrangler/configuration/)
 - [Configuração das construções ligadas ao Git](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)
+
+### Miniaturas compactas
+
+As fotografias são apresentadas sem ampliação, considerando a densidade de píxeis do ecrã. O destaque dispõe de uma área maior (280 × 158 px no computador, 192 × 108 px no telemóvel). As restantes miniaturas são mais pequenas. Se a fonte não disponibilizar uma fotografia utilizável, mantém-se uma alternativa gráfica com a indicação «Sem imagem da fonte», também traduzida para inglês.
