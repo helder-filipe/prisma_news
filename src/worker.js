@@ -1,3 +1,4 @@
+import {pageImage} from './images.js';
 import html from '../public/index.html';
 import sources from '../public/sources.html';
 import css from '../public/style.css';
@@ -20,38 +21,34 @@ function safePublicURL(value,base){
   return u;
  }catch{return null;}
 }
-function imageFromHTML(html,pageURL){
- const decode=s=>String(s||'').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&#x2f;/gi,'/');
- for(const match of html.matchAll(/<meta\b[^>]*>/gi)){
-  const attrs={};for(const a of match[0].matchAll(/([\w:-]+)\s*=\s*(["'])(.*?)\2/gi))attrs[a[1].toLowerCase()]=decode(a[3]);
-  const key=(attrs.property||attrs.name||'').toLowerCase();if(!['og:image','og:image:url','twitter:image','twitter:image:src'].includes(key))continue;
-  const u=safePublicURL(attrs.content,pageURL);if(u)return u.href;
- }
- return '';
-}
-async function readHTML(response,maxBytes=180_000){
+async function readHTML(response,maxBytes=500_000){
  if(!response.body?.getReader)return (await response.text()).slice(0,maxBytes);
  const reader=response.body.getReader();const chunks=[];let total=0;
  try{while(total<maxBytes){const {done,value}=await reader.read();if(done)break;const chunk=value.subarray(0,maxBytes-total);chunks.push(chunk);total+=chunk.length;if(chunk.length<value.length)break;}}finally{try{await reader.cancel();}catch{}}
  const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}return new TextDecoder().decode(bytes);
 }
-async function articleImage(articleURL){
+async function articleImage(articleURL,budgetSignal){
  const now=Date.now(),cached=imageMemory.get(articleURL);if(cached&&now-cached.at<(cached.url?6:0.5)*60*60*1000)return cached.url||'';
  let current=safePublicURL(articleURL);if(!current)return '';
  try{
   for(let redirects=0;redirects<4;redirects++){
-   const response=await fetch(current.href,{headers:{Accept:'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1','User-Agent':'Mozilla/5.0 (compatible; PrismaVerde/1.0)'},signal:AbortSignal.timeout(2500),redirect:'manual'});
+   const response=await fetch(current.href,{headers:{Accept:'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1','User-Agent':'Mozilla/5.0 (compatible; PrismaVerde/1.0)'},signal:AbortSignal.any([AbortSignal.timeout(3000),budgetSignal]),redirect:'manual'});
    if(response.status>=300&&response.status<400){const next=safePublicURL(response.headers.get('location'),current.href);if(!next)break;current=next;continue;}
    if(!response.ok||!/(?:text\/html|application\/xhtml\+xml)/i.test(response.headers.get('content-type')||''))break;
-   const image=imageFromHTML(await readHTML(response),current.href);if(image){imageMemory.set(articleURL,{url:image,at:now});if(imageMemory.size>500)imageMemory.delete(imageMemory.keys().next().value);return image;}
+   const image=pageImage(await readHTML(response),current.href);if(image&&safePublicURL(image)){imageMemory.set(articleURL,{url:image,at:now});if(imageMemory.size>500)imageMemory.delete(imageMemory.keys().next().value);return image;}
    break;
   }
  }catch{}
+ if(budgetSignal.aborted)return '';
  imageMemory.set(articleURL,{url:'',at:now});if(imageMemory.size>500)imageMemory.delete(imageMemory.keys().next().value);return '';
 }
 async function hydrateImages(items){
- const candidates=items.filter(item=>!item.imageUrl).slice(0,16);
- for(let i=0;i<candidates.length;i+=8)await Promise.all(candidates.slice(i,i+8).map(async item=>{item.imageUrl=await articleImage(item.url);}));
+ // Prefer publisher links: Google News intermediary pages often lack article images.
+ const candidates=items.filter(item=>!item.imageUrl).sort((a,b)=>Number(a.url.includes('news.google.com/'))-Number(b.url.includes('news.google.com/')));
+ const budgetSignal=AbortSignal.timeout(7500);let cursor=0;
+ await Promise.all(Array.from({length:Math.min(12,candidates.length)},async()=>{
+  while(cursor<candidates.length&&!budgetSignal.aborted){const item=candidates[cursor++];item.imageUrl=await articleImage(item.url,budgetSignal);}
+ }));
 }
 async function getFeed(def,topic,request,ctx){
  const cacheKey=new Request(new URL('/__rss_cache/v4/'+encodeURIComponent(def.url),request.url));
