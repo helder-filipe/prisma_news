@@ -1,6 +1,7 @@
 import html from '../public/index.html';
 import sources from '../public/sources.html';
 import css from '../public/style.css';
+import infraloboLogo from '../public/infralobo-logo.png';
 import app from '../dist/app.txt';
 import sourcesApp from '../dist/sources-app.txt';
 import {TOPICS,feedDefinitions} from './topics.js';
@@ -78,7 +79,7 @@ export default {async fetch(request,env,ctx){
   const sourcesOnly=url.searchParams.get('sources')==='1';const items=sourcesOnly?[]:mergeArticles(outcomes.map(o=>o.articles)).slice(0,180);if(!sourcesOnly)await hydrateImages(items);const available=outcomes.filter(o=>o.state!=='error');
   return json({topic:topic.id,items,sources,checkedAt:new Date().toISOString(),partial:outcomes.some(o=>o.state!=='ok'),refreshMinutes:15},available.length?200:503);
  }
- const assets={'/':[html,'text/html; charset=utf-8'],'/index.html':[html,'text/html; charset=utf-8'],'/sources':[sources,'text/html; charset=utf-8'],'/sources.html':[sources,'text/html; charset=utf-8'],'/style.css':[css,'text/css; charset=utf-8'],'/app.js':[app,'application/javascript; charset=utf-8'],'/sources.js':[sourcesApp,'application/javascript; charset=utf-8']};
+ const assets={'/infralobo-logo.png':[infraloboLogo,'image/png'],'/':[html,'text/html; charset=utf-8'],'/index.html':[html,'text/html; charset=utf-8'],'/sources':[sources,'text/html; charset=utf-8'],'/sources.html':[sources,'text/html; charset=utf-8'],'/style.css':[css,'text/css; charset=utf-8'],'/app.js':[app,'application/javascript; charset=utf-8'],'/sources.js':[sourcesApp,'application/javascript; charset=utf-8']};
  const asset=assets[url.pathname];if(!asset)return new Response('Página não encontrada',{status:404});
  return new Response(request.method==='HEAD'?null:asset[0],{headers:{...assetHeaders,'Content-Type':asset[1],'Cache-Control':'no-cache'}});
 }};

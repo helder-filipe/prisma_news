@@ -6,8 +6,9 @@ await build({entryPoints:['public/app.js'],bundle:true,format:'iife',platform:'b
 await writeFile('dist/app.txt',await readFile('dist/app.js'));
 await build({entryPoints:['public/sources.js'],bundle:true,format:'iife',platform:'browser',target:'es2022',outfile:'dist/sources.js',minify:true});
 await writeFile('dist/sources-app.txt',await readFile('dist/sources.js'));
-await build({entryPoints:['src/worker.js'],bundle:true,format:'esm',platform:'browser',target:'es2022',outfile:'dist/server/index.js',loader:{'.html':'text','.css':'text','.txt':'text'},minify:true});
+await build({entryPoints:['src/worker.js'],bundle:true,format:'esm',platform:'browser',target:'es2022',outfile:'dist/server/index.js',loader:{'.html':'text','.css':'text','.txt':'text','.png':'binary'},minify:true});
 await Promise.all([
+ copyFile('public/infralobo-logo.png','dist/infralobo-logo.png'),
  copyFile('public/index.html','dist/index.html'),
  copyFile('public/sources.html','dist/sources.html'),
  copyFile('public/style.css','dist/style.css')

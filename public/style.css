@@ -37,3 +37,8 @@
 .feature .image-placeholder{color:#c6d2bd}.feature .image-placeholder svg{width:54px;height:40px}
 .story-image.has-image .image-placeholder{display:none}
 @media(max-width:620px){.story-image,.card .story-image,.side-story .story-image{width:128px;height:80px;margin:0 0 10px}.feature .story-image{width:192px;height:108px;margin:0 0 12px}.feature .image-placeholder svg{width:44px;height:33px}}
+
+/* Institutional signature: preserve the supplied logo and keep the masthead compact. */
+.brand-lockup{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex-shrink:0}
+.infralobo-logo{display:block;width:110px;height:auto;object-fit:contain}
+@media(max-width:620px){.brand-lockup{gap:1px}.infralobo-logo{width:76px}}
