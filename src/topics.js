@@ -23,6 +23,19 @@ export const TOPICS = [
  {id:'normas',label:'Normas',pt:'"NP 4552" OR "ISO 14001" OR "ISO 50001" OR "ISO 9001"',en:'"NP 4552" OR "ISO 14001" OR "ISO 50001" OR "ISO 9001"',match:'(?:np|iso)[ -]*(?:4552|14001|50001|9001)',strict:true},
  {id:'cultura' ,label:'Cultura',pt:'("arte" OR "educação" OR "festival") (ambiente OR sustentabilidade OR reciclagem)',en:'"environmental art" OR "environmental education" OR "sustainability festival" OR "climate art"',match:'environmental art|climate art|eco art|arte ambiental|arte e sustentabilidade|environmental education|educacao ambiental|festival sustentavel|sustainability festival|cultura ambiental'}
 ];
+export const ADDITIONAL_NEWS_SOURCES = [
+ {id:'cm-loule',name:'Câmara Municipal de Loulé',domain:'cm-loule.pt',sourceURL:'https://www.cm-loule.pt/',lang:'pt'},
+ {id:'voz-loule',name:'A Voz de Loulé',domain:'avozdeloule.com',sourceURL:'https://www.avozdeloule.com/',lang:'pt'},
+ {id:'postal',name:'Postal do Algarve',sourceURL:'https://postal.pt/',feedURL:'https://postal.pt/feed/',lang:'pt'},
+ {id:'regiao-sul',name:'Diário Online (Região Sul)',sourceURL:'https://regiao-sul.pt/',feedURL:'https://regiao-sul.pt/feed/',lang:'pt'},
+ {id:'nyt-climate',name:'The New York Times · Climate and Environment',domain:'nytimes.com',query:'(climate OR environment)',sourceURL:'https://www.nytimes.com/section/climate',lang:'en'},
+ {id:'canary',name:'Canary Media',sourceURL:'https://www.canarymedia.com/',feedURL:'https://www.canarymedia.com/rss.rss',lang:'en'},
+ {id:'yale-e360',name:'Yale Environment 360',sourceURL:'https://e360.yale.edu/',feedURL:'https://e360.yale.edu/feed.xml',lang:'en'},
+ {id:'mongabay',name:'Mongabay',domain:'news.mongabay.com',sourceURL:'https://news.mongabay.com/',lang:'en'},
+ {id:'carbon-brief',name:'Carbon Brief',domain:'carbonbrief.org',sourceURL:'https://www.carbonbrief.org/',lang:'en'},
+ {id:'inside-climate',name:'Inside Climate News',sourceURL:'https://insideclimatenews.org/',feedURL:'https://insideclimatenews.org/feed/',lang:'en'},
+ {id:'grist',name:'Grist',sourceURL:'https://grist.org/',feedURL:'https://grist.org/feed/',lang:'en'}
+];
 export function feedDefinitions(topic){
  const pt=`(${topic.pt}) (Portugal OR site:.pt) when:30d`;
  const en=`(${topic.en}) when:30d`;
@@ -36,6 +49,9 @@ export function feedDefinitions(topic){
    {id:'adp',name:'Águas de Portugal · Notícias',domain:'adp.pt',sourceURL:'https://www.adp.pt/'},
    {id:'apda',name:'APDA · Notícias',domain:'apda.pt',sourceURL:'https://www.apda.pt/'}
   ].map(source=>({id:`${source.id}-news`,name:source.name,url:google(`(${topic.pt}) site:${source.domain} when:30d`,'pt'),sourceURL:source.sourceURL,lang:'pt',kind:'aggregator',site:source.domain})),
+  ...ADDITIONAL_NEWS_SOURCES.map(source=>({id:source.id,name:source.name,sourceURL:source.sourceURL,lang:source.lang,
+   url:source.feedURL||google(`(${topic[source.lang]}) site:${source.domain} ${source.query||''} when:30d`,source.lang),
+   kind:source.feedURL?'direct':'aggregator',...(source.domain?{site:source.domain}:{})})),
   {id:'ambiente-magazine',name:'Ambiente Magazine',url:'https://www.ambientemagazine.com/feed/',lang:'pt',kind:'direct'},
   {id:'guardian',name:'The Guardian · Environment',url:'https://www.theguardian.com/environment/rss',lang:'en',kind:'direct'}
  ];
