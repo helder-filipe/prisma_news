@@ -48,12 +48,12 @@ async function articleImage(articleURL,budgetSignal,excluded=[]){
  if(budgetSignal.aborted||excluded.length)return '';
  imageMemory.set(articleURL,{url:'',at:now});if(imageMemory.size>500)imageMemory.delete(imageMemory.keys().next().value);return '';
 }
-async function hydrateImages(items){
+async function hydrateImages(items,imageCache){
  // Prefer publisher links: Google News intermediary pages often lack article images.
  const candidates=items.filter(item=>!item.imageUrl).sort((a,b)=>Number(a.url.includes('news.google.com/'))-Number(b.url.includes('news.google.com/')));
  const budgetSignal=AbortSignal.timeout(7500);let cursor=0;
  await Promise.all(Array.from({length:Math.min(12,candidates.length)},async()=>{
-  while(cursor<candidates.length&&!budgetSignal.aborted){const item=candidates[cursor++];item.imageUrl=await articleImage(item.url,budgetSignal);}
+  while(cursor<candidates.length&&!budgetSignal.aborted){const item=candidates[cursor++];const cached=await imageCache?.get(item.url);if(cached!==undefined){item.imageUrl=cached.imageUrl||'';continue;}item.imageUrl=await articleImage(item.url,budgetSignal);}
  }));
 }
 async function getFeed(def,topic,request,ctx){
@@ -124,9 +124,10 @@ export default {async fetch(request,env,ctx){
   const topic=TOPICS.find(t=>t.id===(url.searchParams.get('topic')||'tudo'));
   if(!topic)return json({error:'Tema inválido.'},400);
   const defs=feedDefinitions(topic);
-  const outcomes=await Promise.all(defs.map(async def=>{try{return {...await getFeed(def,topic,request,ctx),def};}catch{return {articles:[],state:'error',fetchedAt:null,def};}}));
+  const cachedItems=url.searchParams.has('image')&&env?.cachedNews?.topic===topic.id?env.cachedNews.items:null;
+  const outcomes=cachedItems?[]:await Promise.all(defs.map(async def=>{try{return {...await getFeed(def,topic,request,ctx),def};}catch{return {articles:[],state:'error',fetchedAt:null,def};}}));
   const sources=outcomes.map(o=>({name:o.def.name,url:o.def.sourceURL||o.def.url,state:o.state,fetchedAt:o.fetchedAt?new Date(o.fetchedAt).toISOString():null,count:o.articles.length}));
-  const sourcesOnly=url.searchParams.get('sources')==='1';const items=sourcesOnly?[]:mergeArticles(outcomes.map(o=>o.articles)).slice(0,180);
+  const sourcesOnly=url.searchParams.get('sources')==='1';const items=cachedItems||(sourcesOnly?[]:mergeArticles(outcomes.map(o=>o.articles)).slice(0,180));
   const imageRequest=url.searchParams.get('image');
   if(imageRequest){
    // Resolve only an article actually returned by these feeds, never arbitrary user URLs.
@@ -140,7 +141,7 @@ export default {async fetch(request,env,ctx){
    return json({imageUrl});
   }
   for(const item of items)item.imageTopic=topic.id;
-  if(!sourcesOnly)await hydrateImages(items);const available=outcomes.filter(o=>o.state!=='error');
+  if(!sourcesOnly)await hydrateImages(items,env?.imageCache);const available=outcomes.filter(o=>o.state!=='error');
   return json({topic:topic.id,items,sources,checkedAt:new Date().toISOString(),partial:outcomes.some(o=>o.state!=='ok'),refreshMinutes:15},available.length?200:503);
  }
  const assets={'/icons/prisma-verde.svg':[prismaIcon,'image/svg+xml'],'/icons/favicon-32.png':[favicon,'image/png'],'/icons/apple-touch-icon.png':[appleIcon,'image/png'],'/icons/icon-192.png':[icon192,'image/png'],'/icons/icon-512.png':[icon512,'image/png'],'/manifest.webmanifest':[manifest,'application/manifest+json'],'/infralobo-logo.png':[infraloboLogo,'image/png'],'/':[html,'text/html; charset=utf-8'],'/index.html':[html,'text/html; charset=utf-8'],'/sources':[sources,'text/html; charset=utf-8'],'/sources.html':[sources,'text/html; charset=utf-8'],'/style.css':[css,'text/css; charset=utf-8'],'/app.js':[app,'application/javascript; charset=utf-8'],'/sources.js':[sourcesApp,'application/javascript; charset=utf-8']};

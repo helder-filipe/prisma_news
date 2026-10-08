@@ -12,6 +12,7 @@
     "check:deploy": "npm run build && wrangler deploy --dry-run"
   },
   "dependencies": {
+    "@vercel/functions": "3.9.11",
     "esbuild": "0.28.2",
     "fast-xml-parser": "5.11.1",
     "franc-min": "6.2.0"

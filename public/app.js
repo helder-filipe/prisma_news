@@ -59,7 +59,7 @@ function render(){
 }
 function imageFallback(img){imageRecovery.failed(img);}
 $('#results').addEventListener('error',e=>{if(e.target instanceof HTMLImageElement)imageFallback(e.target);},true);
-$('#results').addEventListener('load',e=>{const img=e.target;if(!(img instanceof HTMLImageElement))return;const slot=img.closest('.story-image');if(!slot)return;const density=Math.max(1,window.devicePixelRatio||1);const width=img.naturalWidth/density,height=img.naturalHeight/density;if(Math.min(img.naturalWidth,img.naturalHeight)<40){imageFallback(img);return;}img.style.maxWidth=`${Math.floor(width)}px`;img.style.maxHeight=`${Math.floor(height)}px`;slot.classList.remove('is-loading','is-fallback');slot.classList.add('has-image');},true);
+$('#results').addEventListener('load',e=>{const img=e.target;if(!(img instanceof HTMLImageElement))return;const slot=img.closest('.story-image');if(!slot)return;const density=Math.max(1,window.devicePixelRatio||1);const width=img.naturalWidth/density,height=img.naturalHeight/density;if(Math.min(img.naturalWidth,img.naturalHeight)<40){imageFallback(img);return;}img.style.maxWidth=`${Math.floor(width)}px`;img.style.maxHeight=`${Math.floor(height)}px`;slot.classList.remove('is-loading','is-fallback');slot.classList.add('has-image');imageRecovery.loaded(img);},true);
 async function load(force=false){
  const key=selected,number=++requestNumber;
  data=key==='tudo'?collection.snapshot():collection.memory.get(key)?.data||null;
