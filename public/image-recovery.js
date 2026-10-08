@@ -15,7 +15,7 @@ export function createImageRecovery(root,onRecovered){
   if(!visible){state.pending=false;pump();return;}
   state.attempts++;active++;
   try{
-   const params=new URLSearchParams({topic,image:url});for(const image of state.tried)params.append('exclude',image);
+   const params=new URLSearchParams({topic,image:url,images:'visible'});for(const image of state.tried)params.append('exclude',image);
    const response=await fetch('/api/news?'+params,{signal:AbortSignal.timeout(28000),cache:'default'});
    if(!response.ok)throw Error('Image unavailable');const data=await response.json();
    if(data.imageUrl&&!state.tried.has(data.imageUrl)){state.result=data.imageUrl;onRecovered(url,data.imageUrl);}else if(!state.result){saved.set(url,'');state.retryAt=Date.now()+600000;}

@@ -141,7 +141,7 @@ export default {async fetch(request,env,ctx){
    return json({imageUrl});
   }
   for(const item of items)item.imageTopic=topic.id;
-  if(!sourcesOnly)await hydrateImages(items,env?.imageCache);const available=outcomes.filter(o=>o.state!=='error');
+  if(!sourcesOnly&&url.searchParams.get('images')!=='visible')await hydrateImages(items,env?.imageCache);const available=outcomes.filter(o=>o.state!=='error');
   return json({topic:topic.id,items,sources,checkedAt:new Date().toISOString(),partial:outcomes.some(o=>o.state!=='ok'),refreshMinutes:15},available.length?200:503);
  }
  const assets={'/icons/prisma-verde.svg':[prismaIcon,'image/svg+xml'],'/icons/favicon-32.png':[favicon,'image/png'],'/icons/apple-touch-icon.png':[appleIcon,'image/png'],'/icons/icon-192.png':[icon192,'image/png'],'/icons/icon-512.png':[icon512,'image/png'],'/manifest.webmanifest':[manifest,'application/manifest+json'],'/infralobo-logo.png':[infraloboLogo,'image/png'],'/':[html,'text/html; charset=utf-8'],'/index.html':[html,'text/html; charset=utf-8'],'/sources':[sources,'text/html; charset=utf-8'],'/sources.html':[sources,'text/html; charset=utf-8'],'/style.css':[css,'text/css; charset=utf-8'],'/app.js':[app,'application/javascript; charset=utf-8'],'/sources.js':[sourcesApp,'application/javascript; charset=utf-8']};

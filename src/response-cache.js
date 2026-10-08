@@ -17,10 +17,11 @@ export function createResponseCache(storage){
   if(!['GET','HEAD'].includes(request.method))return run(image);
   const url=new URL(request.url),topic=url.searchParams.get('topic')||'tudo';
   const article=url.searchParams.get('image'),excluded=url.searchParams.getAll('exclude').slice(0,4);
-  const key='news:v1:'+JSON.stringify([topic,url.searchParams.get('sources')==='1']);
+  const mode=url.searchParams.get('images')==='visible'?'visible':'eager';
+  const key='news:v2:'+JSON.stringify([topic,url.searchParams.get('sources')==='1',mode]);
   const cached=article?await image.get(article,excluded):await get(key);
   if(cached!==undefined)return response(cached,article,'HIT');
-  const knownNews=article?await get('news:v1:'+JSON.stringify([topic,false])):undefined;
+  const knownNews=article?await get('news:v2:'+JSON.stringify([topic,false,mode])):undefined;
   const result=await run(image,knownNews);
   if(!result.ok)return result; // Never cache request validation errors or unavailable feeds.
   const data=await result.clone().json();
