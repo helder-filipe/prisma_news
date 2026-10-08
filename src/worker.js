@@ -1,3 +1,9 @@
+import prismaIcon from '../public/icons/prisma-verde.svg';
+import favicon from '../public/icons/favicon-32.png';
+import appleIcon from '../public/icons/apple-touch-icon.png';
+import icon192 from '../public/icons/icon-192.png';
+import icon512 from '../public/icons/icon-512.png';
+import manifest from '../public/manifest.webmanifest';
 import {pageImage} from './images.js';
 import html from '../public/index.html';
 import sources from '../public/sources.html';
@@ -76,7 +82,7 @@ export default {async fetch(request,env,ctx){
   const sourcesOnly=url.searchParams.get('sources')==='1';const items=sourcesOnly?[]:mergeArticles(outcomes.map(o=>o.articles)).slice(0,180);if(!sourcesOnly)await hydrateImages(items);const available=outcomes.filter(o=>o.state!=='error');
   return json({topic:topic.id,items,sources,checkedAt:new Date().toISOString(),partial:outcomes.some(o=>o.state!=='ok'),refreshMinutes:15},available.length?200:503);
  }
- const assets={'/infralobo-logo.png':[infraloboLogo,'image/png'],'/':[html,'text/html; charset=utf-8'],'/index.html':[html,'text/html; charset=utf-8'],'/sources':[sources,'text/html; charset=utf-8'],'/sources.html':[sources,'text/html; charset=utf-8'],'/style.css':[css,'text/css; charset=utf-8'],'/app.js':[app,'application/javascript; charset=utf-8'],'/sources.js':[sourcesApp,'application/javascript; charset=utf-8']};
+ const assets={'/icons/prisma-verde.svg':[prismaIcon,'image/svg+xml'],'/icons/favicon-32.png':[favicon,'image/png'],'/icons/apple-touch-icon.png':[appleIcon,'image/png'],'/icons/icon-192.png':[icon192,'image/png'],'/icons/icon-512.png':[icon512,'image/png'],'/manifest.webmanifest':[manifest,'application/manifest+json'],'/infralobo-logo.png':[infraloboLogo,'image/png'],'/':[html,'text/html; charset=utf-8'],'/index.html':[html,'text/html; charset=utf-8'],'/sources':[sources,'text/html; charset=utf-8'],'/sources.html':[sources,'text/html; charset=utf-8'],'/style.css':[css,'text/css; charset=utf-8'],'/app.js':[app,'application/javascript; charset=utf-8'],'/sources.js':[sourcesApp,'application/javascript; charset=utf-8']};
  const asset=assets[url.pathname];if(!asset)return new Response('Página não encontrada',{status:404});
  return new Response(request.method==='HEAD'?null:asset[0],{headers:{...assetHeaders,'Content-Type':asset[1],'Cache-Control':'no-cache'}});
 }};
