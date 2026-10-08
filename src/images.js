@@ -35,15 +35,16 @@ export function feedImage(row,base){
  for(const key of ['media:group','media:content','media:thumbnail','enclosure','itunes:image','image'])visit(row[key]);
  return candidates.sort((a,b)=>b.width-a.width)[0]?.url||'';
 }
-export function pageImage(html,base){
+export function pageImage(html,base,excluded=[]){
+ const candidate=(value,base)=>{const url=imageURL(value,base);return excluded.includes(url)?'':url;};
  const metas=(html.match(/<meta\b[^>]*>/gi)||[]).map(attrs);
  for(const key of ['og:image:secure_url','og:image','og:image:url','twitter:image','twitter:image:src']){
-  for(const a of metas){if((a.property||a.name||'').toLowerCase()===key){const url=imageURL(a.content,base);if(url)return url;}}
+  for(const a of metas){if((a.property||a.name||'').toLowerCase()===key){const url=candidate(a.content,base);if(url)return url;}}
  }
  function imageValue(value){
   if(Array.isArray(value)){for(const v of value){const found=imageValue(v);if(found)return found;}return '';}
-  if(value&&typeof value==='object')return imageURL(value.contentUrl||value.url,base);
-  return imageURL(value,base);
+  if(value&&typeof value==='object')return candidate(value.contentUrl||value.url,base);
+  return candidate(value,base);
  }
  function articleImage(node){
   if(Array.isArray(node)){for(const n of node){const found=articleImage(n);if(found)return found;}return '';}
@@ -55,8 +56,11 @@ export function pageImage(html,base){
   if(attrs(match[1]).type?.toLowerCase()!=='application/ld+json')continue;
   try{const found=articleImage(JSON.parse(match[2]));if(found)return found;}catch{}
  }
- for(const tag of html.match(/<link\b[^>]*>/gi)||[]){const a=attrs(tag);if(a.rel==='image_src'){const url=imageURL(a.href,base);if(url)return url;}}
+ for(const tag of html.match(/<link\b[^>]*>/gi)||[]){const a=attrs(tag);if(a.rel==='image_src'){const url=candidate(a.href,base);if(url)return url;}}
  // Only inspect article content, avoiding logos and unrelated navigation images.
  const article=html.match(/<article\b[^>]*>([\s\S]*?)(?:<\/article>|$)/i)?.[1];
- return article?htmlImage(article,base):'';
+ const found=article?htmlImage(article,base):'';return excluded.includes(found)?'':found;
+}
+export function rssLinks(html,base){
+ return (html.match(/<link\b[^>]*>/gi)||[]).map(attrs).filter(a=>a.rel?.split(/\s+/).includes('alternate')&&/application\/(?:rss\+xml|xml)/i.test(a.type||'')).map(a=>imageURL(a.href,base)).filter(Boolean);
 }

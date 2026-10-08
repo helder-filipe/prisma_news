@@ -1,3 +1,4 @@
+import {createImageRecovery} from './image-recovery.js';
 import {createNewsCollection} from './news-collection.js';
 import {installArticleActions} from './article-actions.js';
 import {TOPICS} from '../src/topics.js';
@@ -10,6 +11,10 @@ const collection=createNewsCollection(topicIds,{fetchNews:async topic=>{
  const response=await fetch('/api/news?'+new URLSearchParams({topic}),{signal:AbortSignal.timeout(28000),cache:'no-store'});
  const result=await response.json();if(!response.ok||!Array.isArray(result.items))throw new Error('Sources unavailable');return result;
 }});
+const imageRecovery=createImageRecovery($('#results'),(url,imageUrl)=>{
+ for(const entry of collection.memory.values())for(const item of entry.data.items)if(item.url===url)item.imageUrl=imageUrl;
+ for(const item of data?.items||[])if(item.url===url)item.imageUrl=imageUrl;
+});
 const labels=Object.fromEntries(TOPICS.map(t=>[t.id,t.label]));
 const labelsEn={tudo:'All',ambiente:'Environment',agua:'Water',residuos:'Waste / Recycling',biorresiduos:'Biowaste',infraestruturas:'Infrastructure','espacos-verdes':'Green Spaces',urbanismo:'Urban Planning',mobilidade:'Mobility and Transport',sustentabilidade:'Sustainability',ciencia:'Science',tecnologia:'Technology',engenharia:'Engineering','arquitetura-paisagistica':'Landscape Architecture','seguranca-trabalho':'Occupational Health & Safety',normas:'Standards',cultura:'Culture'};
 const copy={
@@ -34,7 +39,7 @@ function updateChrome(){
 function matches(items){const q=normalize($('#search').value.trim());const lang=$('#language').value;return items.filter(n=>(lang==='all'||n.lang===lang)&&normalize([n.title,n.description,n.source,...n.topics.map(labelFor)].join(' ')).includes(q)).sort((a,b)=>$('#sort').value==='old'?a.date.localeCompare(b.date):b.date.localeCompare(a.date));}
 function tag(n){const topic=selected==='tudo'?n.topics[0]:selected;const tip=n.languageMethod==='title'?t('ptTagTitle'):t('feedTagTitle');return `<div class="tag">${escapeHTML(labelFor(topic))} <span class="language" title="${escapeHTML(tip)}">${escapeHTML(n.lang.toUpperCase())}${n.languageMethod==='feed'?'*':''}</span></div>`;}
 function meta(n){return `<div class="meta"><span>${escapeHTML(n.source)}</span><span>·</span><time datetime="${n.date}">${dateLabel(n.date)}</time><a class="read" href="${escapeHTML(n.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(t('read'))}: ${escapeHTML(n.title)} (${escapeHTML(t('newTab'))})">↗</a></div>`;}
-function thumbnail(n,kind){return `<figure class="story-image ${n.imageUrl?'is-loading':'is-fallback'}" data-fallback="${escapeHTML(t('missingImage'))}"><div class="image-placeholder"><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="4" y="4" width="56" height="40" rx="4"/><circle cx="44" cy="16" r="4"/><path d="M6 39l16-18 13 14 8-8 15 12"/></svg><span>${escapeHTML(t(n.imageUrl?'loadingImage':'missingImage'))}</span></div>${n.imageUrl?`<img src="${escapeHTML(n.imageUrl)}" alt="" loading="${kind==='feature'?'eager':'lazy'}" decoding="async" referrerpolicy="no-referrer">`:''}</figure>`;}
+function thumbnail(n,kind){n={...n,imageUrl:imageRecovery.imageFor(n)};return `<figure class="story-image ${n.imageUrl?'is-loading':'is-fallback'}" data-article-url="${escapeHTML(n.url)}" data-image-topic="${escapeHTML(n.imageTopic||n.topics[0]||selected)}" data-fallback="${escapeHTML(t('missingImage'))}"><div class="image-placeholder"><svg viewBox="0 0 64 48" aria-hidden="true"><rect x="4" y="4" width="56" height="40" rx="4"/><circle cx="44" cy="16" r="4"/><path d="M6 39l16-18 13 14 8-8 15 12"/></svg><span>${escapeHTML(t(n.imageUrl?'loadingImage':'missingImage'))}</span></div>${n.imageUrl?`<img src="${escapeHTML(n.imageUrl)}" alt="" loading="${kind==='feature'?'eager':'lazy'}" decoding="async" referrerpolicy="no-referrer">`:''}</figure>`;}
 function story(n,kind){const via=n.via==='Pesquisa Google Notícias'?t('viaGoogle'):n.via==='RSS direto'?t('viaRSS'):n.via;return `<article class="${kind}">${thumbnail(n,kind)}${tag(n)}<h2 lang="${escapeHTML(n.lang)}"><a href="${escapeHTML(n.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(n.title)}</a></h2>${kind==='side-story'||!n.description?'':`<p lang="${escapeHTML(n.lang)}">${escapeHTML(n.description)}</p>`}${meta(n)}<div class="via">${escapeHTML(via)}</div><div class="article-actions"><button type="button" data-article-action="share" data-article-id="${escapeHTML(n.id)}" aria-label="${escapeHTML(t('shareAria'))}: ${escapeHTML(n.title)}">${escapeHTML(t('share'))} ↗</button><button type="button" data-article-action="pdf" data-article-id="${escapeHTML(n.id)}" aria-label="${escapeHTML(t('saveAria'))}: ${escapeHTML(n.title)}">${escapeHTML(t('savePDF'))} ↓</button></div></article>`;}
 function renderTopics(){ $('#topics').innerHTML=TOPICS.map(topic=>`<button type="button" data-topic="${topic.id}" aria-pressed="${topic.id===selected}">${escapeHTML(labelFor(topic.id))}</button>`).join('');}
 function render(){
@@ -48,12 +53,13 @@ function render(){
  else if(items.length>=3&&!$('#search').value.trim()&&$('#sort').value==='recent'){$('#results').innerHTML=`<section class="lead-grid" aria-label="${escapeHTML(t('sortArticles'))}">${story(items[0],'feature')}<div class="side-stack">${items.slice(1,3).map(n=>story(n,'side-story')).join('')}</div></section>${items.length>3?`<div class="section-title"><h2>${escapeHTML(t('continue'))}</h2><span>${escapeHTML(t('moreArticles'))}</span></div>`:''}<section class="cards" aria-label="${escapeHTML(t('moreArticles'))}">${items.slice(3).map(n=>story(n,'card')).join('')}</section>`;}
  else{$('#results').innerHTML=`<section class="cards" aria-label="${escapeHTML(t('moreArticles'))}">${items.map(n=>story(n,'card')).join('')}</section>`;}
  let status=busy?(selected==='tudo'?`${t('checking')} ${completedTopics}/${topicIds.length} ${isEnglish()?'topics':'temas'}`:t('checking')):failed?(data?.items?.length?t('failedWithCache'):t('failed')):data?`${t('updatedAt')} ${timeLabel(data.checkedAt)} · ${t('autoEvery')}`:'';if(data?.partial&&!busy&&!failed)status+=` · ${t('partial')}`;$('#live-status').textContent=status;
+ imageRecovery.observe();
  $('#top-status').textContent=busy?t('checking'):data?`${t('topChecked')} ${timeLabel(data.checkedAt)}`:t('topUpdating');
 
 }
-function imageFallback(img){const slot=img.closest('.story-image');if(!slot)return;slot.classList.remove('is-loading','has-image');slot.classList.add('is-fallback');slot.querySelector('.image-placeholder span').textContent=slot.dataset.fallback;img.remove();}
+function imageFallback(img){imageRecovery.failed(img);}
 $('#results').addEventListener('error',e=>{if(e.target instanceof HTMLImageElement)imageFallback(e.target);},true);
-$('#results').addEventListener('load',e=>{const img=e.target;if(!(img instanceof HTMLImageElement))return;const slot=img.closest('.story-image');if(!slot)return;const density=Math.max(1,window.devicePixelRatio||1);const width=img.naturalWidth/density,height=img.naturalHeight/density;if(Math.min(width,height)<40){imageFallback(img);return;}img.style.maxWidth=`${Math.floor(width)}px`;img.style.maxHeight=`${Math.floor(height)}px`;slot.classList.remove('is-loading','is-fallback');slot.classList.add('has-image');},true);
+$('#results').addEventListener('load',e=>{const img=e.target;if(!(img instanceof HTMLImageElement))return;const slot=img.closest('.story-image');if(!slot)return;const density=Math.max(1,window.devicePixelRatio||1);const width=img.naturalWidth/density,height=img.naturalHeight/density;if(Math.min(img.naturalWidth,img.naturalHeight)<40){imageFallback(img);return;}img.style.maxWidth=`${Math.floor(width)}px`;img.style.maxHeight=`${Math.floor(height)}px`;slot.classList.remove('is-loading','is-fallback');slot.classList.add('has-image');},true);
 async function load(force=false){
  const key=selected,number=++requestNumber;
  data=key==='tudo'?collection.snapshot():collection.memory.get(key)?.data||null;

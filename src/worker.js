@@ -4,7 +4,7 @@ import appleIcon from '../public/icons/apple-touch-icon.png';
 import icon192 from '../public/icons/icon-192.png';
 import icon512 from '../public/icons/icon-512.png';
 import manifest from '../public/manifest.webmanifest';
-import {pageImage} from './images.js';
+import {pageImage,rssLinks} from './images.js';
 import html from '../public/index.html';
 import sources from '../public/sources.html';
 import css from '../public/style.css';
@@ -12,7 +12,7 @@ import infraloboLogo from '../public/infralobo-logo.png';
 import app from '../dist/app.txt';
 import sourcesApp from '../dist/sources-app.txt';
 import {TOPICS,feedDefinitions} from './topics.js';
-import {parseFeed,mergeArticles} from './feed.js';
+import {parseFeed,mergeArticles,normalize} from './feed.js';
 const TTL=15*60*1000;
 const memory=new Map();const pending=new Map();
 const imageMemory=new Map();
@@ -33,19 +33,19 @@ async function readHTML(response,maxBytes=500_000){
  try{while(total<maxBytes){const {done,value}=await reader.read();if(done)break;const chunk=value.subarray(0,maxBytes-total);chunks.push(chunk);total+=chunk.length;if(chunk.length<value.length)break;}}finally{try{await reader.cancel();}catch{}}
  const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}return new TextDecoder().decode(bytes);
 }
-async function articleImage(articleURL,budgetSignal){
- const now=Date.now(),cached=imageMemory.get(articleURL);if(cached&&now-cached.at<(cached.url?6:0.5)*60*60*1000)return cached.url||'';
+async function articleImage(articleURL,budgetSignal,excluded=[]){
+ const now=Date.now(),cached=imageMemory.get(articleURL);if(!excluded.length&&cached&&now-cached.at<(cached.url?6:0.5)*60*60*1000)return cached.url||'';
  let current=safePublicURL(articleURL);if(!current)return '';
  try{
   for(let redirects=0;redirects<4;redirects++){
    const response=await fetch(current.href,{headers:{Accept:'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1','User-Agent':'Mozilla/5.0 (compatible; PrismaVerde/1.0)'},signal:AbortSignal.any([AbortSignal.timeout(3000),budgetSignal]),redirect:'manual'});
    if(response.status>=300&&response.status<400){const next=safePublicURL(response.headers.get('location'),current.href);if(!next)break;current=next;continue;}
    if(!response.ok||!/(?:text\/html|application\/xhtml\+xml)/i.test(response.headers.get('content-type')||''))break;
-   const image=pageImage(await readHTML(response),current.href);if(image&&safePublicURL(image)){imageMemory.set(articleURL,{url:image,at:now});if(imageMemory.size>500)imageMemory.delete(imageMemory.keys().next().value);return image;}
+   const image=pageImage(await readHTML(response),current.href,excluded);if(image&&safePublicURL(image)){imageMemory.set(articleURL,{url:image,at:now});if(imageMemory.size>500)imageMemory.delete(imageMemory.keys().next().value);return image;}
    break;
   }
  }catch{}
- if(budgetSignal.aborted)return '';
+ if(budgetSignal.aborted||excluded.length)return '';
  imageMemory.set(articleURL,{url:'',at:now});if(imageMemory.size>500)imageMemory.delete(imageMemory.keys().next().value);return '';
 }
 async function hydrateImages(items){
@@ -69,6 +69,40 @@ async function getFeed(def,topic,request,ctx){
   const current=await job;return {articles:parse(current),state:'ok',fetchedAt:current.fetchedAt};
  }catch{if(stored&&Date.now()-stored.fetchedAt<86400000)return {articles:parse(stored),state:'stale',fetchedAt:stored.fetchedAt};return {articles:[],state:'error',fetchedAt:null};}
 }
+const publisherFeeds=new Map();
+async function publisherImage(article,signal,excluded){
+ const origin=safePublicURL(article.sourceURL);if(!origin||origin.hostname==='news.google.com')return '';
+ const host=url=>new URL(url).hostname.replace(/^www\./,'');
+ const known=feedDefinitions(TOPICS[0]).find(def=>def.kind==='direct'&&host(def.sourceURL||def.url)===host(origin.href));
+ const feedURL=known?.url||new URL('/feed/',origin).href;
+ let cached=publisherFeeds.get(feedURL);
+ async function readPublic(url){
+  let current=safePublicURL(url);if(!current)throw Error('Invalid URL');
+  for(let i=0;i<3;i++){
+   const response=await fetch(current.href,{headers:{Accept:'application/rss+xml, application/xml, text/html;q=0.5'},signal:AbortSignal.any([signal,AbortSignal.timeout(3500)]),redirect:'manual'});
+   if(response.status>=300&&response.status<400){current=safePublicURL(response.headers.get('location'),current.href);if(!current)break;continue;}
+   if(!response.ok)break;return {text:await readHTML(response,1_500_000),url:current.href};
+  }
+  throw Error('Publisher unavailable');
+ }
+ if(!cached||Date.now()-cached.at>TTL){
+  const parse=xml=>parseFeed(xml,{name:article.source,kind:'direct',lang:article.lang},TOPICS[0]);
+  try{cached={items:parse((await readPublic(feedURL)).text),at:Date.now()};}
+  catch{
+   try{
+    const home=await readPublic(origin.href);const alternate=rssLinks(home.text,home.url).find(url=>url!==feedURL);
+    if(alternate)cached={items:parse((await readPublic(alternate)).text),at:Date.now()};
+   }catch{}
+  }
+  if(!cached&&!signal.aborted)cached={items:[],at:Date.now()};
+  if(cached){publisherFeeds.set(feedURL,cached);if(publisherFeeds.size>80)publisherFeeds.delete(publisherFeeds.keys().next().value);}
+ }
+ const key=value=>normalize(value).replace(/[^a-z0-9]/g,'');
+ const match=cached?.items.find(item=>key(item.title)===key(article.title));
+ if(!match)return '';
+ if(match.imageUrl&&!excluded.includes(match.imageUrl))return match.imageUrl;
+ return articleImage(match.url,signal,excluded);
+}
 const assetHeaders={'X-Content-Type-Options':'nosniff','Referrer-Policy':'strict-origin-when-cross-origin'};
 export default {async fetch(request,env,ctx){
  const url=new URL(request.url);
@@ -79,7 +113,21 @@ export default {async fetch(request,env,ctx){
   const defs=feedDefinitions(topic);
   const outcomes=await Promise.all(defs.map(async def=>{try{return {...await getFeed(def,topic,request,ctx),def};}catch{return {articles:[],state:'error',fetchedAt:null,def};}}));
   const sources=outcomes.map(o=>({name:o.def.name,url:o.def.sourceURL||o.def.url,state:o.state,fetchedAt:o.fetchedAt?new Date(o.fetchedAt).toISOString():null,count:o.articles.length}));
-  const sourcesOnly=url.searchParams.get('sources')==='1';const items=sourcesOnly?[]:mergeArticles(outcomes.map(o=>o.articles)).slice(0,180);if(!sourcesOnly)await hydrateImages(items);const available=outcomes.filter(o=>o.state!=='error');
+  const sourcesOnly=url.searchParams.get('sources')==='1';const items=sourcesOnly?[]:mergeArticles(outcomes.map(o=>o.articles)).slice(0,180);
+  const imageRequest=url.searchParams.get('image');
+  if(imageRequest){
+   // Resolve only an article actually returned by these feeds, never arbitrary user URLs.
+   const article=items.find(item=>item.url===imageRequest);if(!article)return json({imageUrl:''},404);
+   const excluded=url.searchParams.getAll('exclude').slice(0,4);const signal=AbortSignal.timeout(10000);
+   let imageUrl=article.imageUrl&&!excluded.includes(article.imageUrl)?article.imageUrl:'';
+   const google=new URL(article.url).hostname==='news.google.com';
+   if(!imageUrl&&google)imageUrl=await publisherImage(article,signal,excluded);
+   if(!imageUrl&&!signal.aborted)imageUrl=await articleImage(article.url,signal,excluded.length?excluded:['']);
+   if(!imageUrl&&!google&&!signal.aborted)imageUrl=await publisherImage(article,signal,excluded);
+   return json({imageUrl});
+  }
+  for(const item of items)item.imageTopic=topic.id;
+  if(!sourcesOnly)await hydrateImages(items);const available=outcomes.filter(o=>o.state!=='error');
   return json({topic:topic.id,items,sources,checkedAt:new Date().toISOString(),partial:outcomes.some(o=>o.state!=='ok'),refreshMinutes:15},available.length?200:503);
  }
  const assets={'/icons/prisma-verde.svg':[prismaIcon,'image/svg+xml'],'/icons/favicon-32.png':[favicon,'image/png'],'/icons/apple-touch-icon.png':[appleIcon,'image/png'],'/icons/icon-192.png':[icon192,'image/png'],'/icons/icon-512.png':[icon512,'image/png'],'/manifest.webmanifest':[manifest,'application/manifest+json'],'/infralobo-logo.png':[infraloboLogo,'image/png'],'/':[html,'text/html; charset=utf-8'],'/index.html':[html,'text/html; charset=utf-8'],'/sources':[sources,'text/html; charset=utf-8'],'/sources.html':[sources,'text/html; charset=utf-8'],'/style.css':[css,'text/css; charset=utf-8'],'/app.js':[app,'application/javascript; charset=utf-8'],'/sources.js':[sourcesApp,'application/javascript; charset=utf-8']};
