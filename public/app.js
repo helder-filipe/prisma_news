@@ -1,10 +1,15 @@
+import {createNewsCollection} from './news-collection.js';
 import {installArticleActions} from './article-actions.js';
 import {TOPICS} from '../src/topics.js';
 const $=s=>document.querySelector(s);
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalize=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-let selected='tudo',data=null,busy=false,failed=false,requestNumber=0,controller;
-const memory=new Map();
+let selected='tudo',data=null,busy=false,failed=false,requestNumber=0,completedTopics=0;
+const topicIds=TOPICS.filter(topic=>topic.id!=='tudo').map(topic=>topic.id);
+const collection=createNewsCollection(topicIds,{fetchNews:async topic=>{
+ const response=await fetch('/api/news?'+new URLSearchParams({topic}),{signal:AbortSignal.timeout(28000),cache:'no-store'});
+ const result=await response.json();if(!response.ok||!Array.isArray(result.items))throw new Error('Sources unavailable');return result;
+}});
 const labels=Object.fromEntries(TOPICS.map(t=>[t.id,t.label]));
 const labelsEn={tudo:'All',ambiente:'Environment',agua:'Water',residuos:'Waste / Recycling',biorresiduos:'Biowaste',infraestruturas:'Infrastructure','espacos-verdes':'Green Spaces',urbanismo:'Urban Planning',mobilidade:'Mobility and Transport',sustentabilidade:'Sustainability',ciencia:'Science',tecnologia:'Technology',engenharia:'Engineering','arquitetura-paisagistica':'Landscape Architecture','seguranca-trabalho':'Occupational Health & Safety',normas:'Standards',cultura:'Culture'};
 const copy={
@@ -42,7 +47,7 @@ function render(){
  if(busy&&!data){$('#results').innerHTML=`<div class="loading-panel"><span class="loading-mark" aria-hidden="true">◆</span><h2>${escapeHTML(t('loadingHeading'))}</h2><p>${escapeHTML(t('loadingText'))}</p></div>`;}
  else if(items.length>=3&&!$('#search').value.trim()&&$('#sort').value==='recent'){$('#results').innerHTML=`<section class="lead-grid" aria-label="${escapeHTML(t('sortArticles'))}">${story(items[0],'feature')}<div class="side-stack">${items.slice(1,3).map(n=>story(n,'side-story')).join('')}</div></section>${items.length>3?`<div class="section-title"><h2>${escapeHTML(t('continue'))}</h2><span>${escapeHTML(t('moreArticles'))}</span></div>`:''}<section class="cards" aria-label="${escapeHTML(t('moreArticles'))}">${items.slice(3).map(n=>story(n,'card')).join('')}</section>`;}
  else{$('#results').innerHTML=`<section class="cards" aria-label="${escapeHTML(t('moreArticles'))}">${items.map(n=>story(n,'card')).join('')}</section>`;}
- let status=busy?t('checking'):failed?(data?.items?.length?t('failedWithCache'):t('failed')):data?`${t('updatedAt')} ${timeLabel(data.checkedAt)} · ${t('autoEvery')}`:'';if(data?.partial&&!busy&&!failed)status+=` · ${t('partial')}`;$('#live-status').textContent=status;
+ let status=busy?(selected==='tudo'?`${t('checking')} ${completedTopics}/${topicIds.length} ${isEnglish()?'topics':'temas'}`:t('checking')):failed?(data?.items?.length?t('failedWithCache'):t('failed')):data?`${t('updatedAt')} ${timeLabel(data.checkedAt)} · ${t('autoEvery')}`:'';if(data?.partial&&!busy&&!failed)status+=` · ${t('partial')}`;$('#live-status').textContent=status;
  $('#top-status').textContent=busy?t('checking'):data?`${t('topChecked')} ${timeLabel(data.checkedAt)}`:t('topUpdating');
 
 }
@@ -50,10 +55,19 @@ function imageFallback(img){const slot=img.closest('.story-image');if(!slot)retu
 $('#results').addEventListener('error',e=>{if(e.target instanceof HTMLImageElement)imageFallback(e.target);},true);
 $('#results').addEventListener('load',e=>{const img=e.target;if(!(img instanceof HTMLImageElement))return;const slot=img.closest('.story-image');if(!slot)return;const density=Math.max(1,window.devicePixelRatio||1);const width=img.naturalWidth/density,height=img.naturalHeight/density;if(Math.min(width,height)<40){imageFallback(img);return;}img.style.maxWidth=`${Math.floor(width)}px`;img.style.maxHeight=`${Math.floor(height)}px`;slot.classList.remove('is-loading','is-fallback');slot.classList.add('has-image');},true);
 async function load(force=false){
- const key=selected;const cached=memory.get(key);if(!force&&cached&&Date.now()-cached.loadedAt<15*60000){controller?.abort();requestNumber++;data=cached.data;busy=false;failed=false;render();return;}
- controller?.abort();controller=new AbortController();const ownController=controller;const number=++requestNumber;data=cached?.data||null;busy=true;failed=false;render();const timer=setTimeout(()=>ownController.abort(),22000);
- try{const response=await fetch('/api/news?'+new URLSearchParams({topic:selected}),{signal:ownController.signal,cache:'no-store'});const next=await response.json();if(number!==requestNumber)return;if(!response.ok){if(!data&&next.sources)data=next;throw new Error('Sources unavailable');}data=next;memory.set(key,{data:next,loadedAt:Date.now()});}
- catch{if(number!==requestNumber)return;failed=true;}finally{clearTimeout(timer);if(number===requestNumber){busy=false;render();}}
+ const key=selected,number=++requestNumber;
+ data=key==='tudo'?collection.snapshot():collection.memory.get(key)?.data||null;
+ if(key==='tudo'&&!data.loadedTopics)data=null;
+ busy=true;failed=false;completedTopics=0;render();
+ try{
+  if(key==='tudo'){
+   const result=await collection.all(force,(next,completed)=>{if(number!==requestNumber)return;data=next;completedTopics=completed;render();});
+   if(number!==requestNumber)return;data=result.data;failed=result.errors.length===topicIds.length;
+  }else{
+   const next=await collection.topic(key,force);if(number!==requestNumber)return;data=next;
+  }
+ }catch{if(number===requestNumber)failed=true;}
+ finally{if(number===requestNumber){busy=false;render();}}
 }
 $('#topics').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&selected!==b.dataset.topic){selected=b.dataset.topic;load();}});
 $('#search').addEventListener('input',render);$('#sort').addEventListener('change',render);try{const saved=localStorage.getItem('prisma-language');if(['all','pt','en'].includes(saved))$('#language').value=saved;}catch{}$('#language').addEventListener('change',()=>{try{localStorage.setItem('prisma-language',$('#language').value);}catch{}render();});$('#refresh').addEventListener('click',()=>load(true));
