@@ -70,7 +70,7 @@ async function load(force=false){
  finally{if(number===requestNumber){busy=false;render();}}
 }
 $('#topics').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&selected!==b.dataset.topic){selected=b.dataset.topic;load();}});
-$('#search').addEventListener('input',render);$('#sort').addEventListener('change',render);try{const saved=localStorage.getItem('prisma-language');if(['all','pt','en'].includes(saved))$('#language').value=saved;}catch{}$('#language').addEventListener('change',()=>{try{localStorage.setItem('prisma-language',$('#language').value);}catch{}render();});$('#refresh').addEventListener('click',()=>load(true));
-$('#reset').addEventListener('click',()=>{$('#search').value='';$('#language').value='all';$('#sort').value='recent';if(selected!=='tudo'){selected='tudo';load();}else{render();if(failed)load(true);}$('#search').focus();});
+$('#search').addEventListener('input',render);$('#sort').addEventListener('change',render);$('#language').value='pt';$('#language').addEventListener('change',render);$('#refresh').addEventListener('click',()=>load(true));
+$('#reset').addEventListener('click',()=>{$('#search').value='';$('#language').value='pt';$('#sort').value='recent';if(selected!=='tudo'){selected='tudo';load();}else{render();if(failed)load(true);}$('#search').focus();});
 setInterval(()=>{if(!document.hidden&&!busy)load();},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)load();});
 installArticleActions(id=>data?.items.find(n=>n.id===id),()=>isEnglish());load();
