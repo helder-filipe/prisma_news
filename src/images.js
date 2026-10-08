@@ -64,3 +64,14 @@ export function pageImage(html,base,excluded=[]){
 export function rssLinks(html,base){
  return (html.match(/<link\b[^>]*>/gi)||[]).map(attrs).filter(a=>a.rel?.split(/\s+/).includes('alternate')&&/application\/(?:rss\+xml|xml)/i.test(a.type||'')).map(a=>imageURL(a.href,base)).filter(Boolean);
 }
+
+// Follow only links whose headline exactly identifies the requested article.
+export function headlineLink(html,base,title){
+ const key=value=>decode(value).replace(/<[^>]*>/g,' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const expected=key(title);if(expected.length<15)return '';
+ for(const m of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)){
+  const a=attrs(m[1]);if(![m[2],a.title||'',a['aria-label']||''].some(value=>key(value)===expected))continue;
+  const url=imageURL(a.href,base);if(url&&new URL(url).hostname===new URL(base).hostname)return url;
+ }
+ return '';
+}

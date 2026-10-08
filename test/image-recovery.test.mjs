@@ -18,3 +18,10 @@ test('Google article recovers exact publisher RSS image; arbitrary URLs are neve
   const invalid=await request('http://127.0.0.1/private');assert.equal(invalid.status,404);assert(!visited.some(url=>url.includes('127.0.0.1')));
  }finally{globalThis.fetch=original;}
 });
+
+test('Publisher headline lookup accepts the exact article only',async()=>{
+ const {headlineLink}=await import('../src/images.js');
+ const html='<a href="/wrong">Water infrastructure recovery elsewhere</a><a href="https://other.test/story">Water infrastructure recovery</a><a href="/right"><strong>Water infrastructure</strong> recovery</a>';
+ assert.equal(headlineLink(html,'https://publisher.test','Water infrastructure recovery'),'https://publisher.test/right');
+ assert.equal(headlineLink(html,'https://publisher.test','A different water infrastructure story'),'');
+});

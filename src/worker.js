@@ -4,7 +4,7 @@ import appleIcon from '../public/icons/apple-touch-icon.png';
 import icon192 from '../public/icons/icon-192.png';
 import icon512 from '../public/icons/icon-512.png';
 import manifest from '../public/manifest.webmanifest';
-import {pageImage,rssLinks} from './images.js';
+import {pageImage,rssLinks,headlineLink} from './images.js';
 import html from '../public/index.html';
 import sources from '../public/sources.html';
 import css from '../public/style.css';
@@ -98,7 +98,20 @@ async function publisherImage(article,signal,excluded){
   if(cached){publisherFeeds.set(feedURL,cached);if(publisherFeeds.size>80)publisherFeeds.delete(publisherFeeds.keys().next().value);}
  }
  const key=value=>normalize(value).replace(/[^a-z0-9]/g,'');
- const match=cached?.items.find(item=>key(item.title)===key(article.title));
+ let match=cached?.items.find(item=>key(item.title)===key(article.title));
+ if(!match&&!signal.aborted){
+  try{
+   const home=await readPublic(origin.href);
+   const link=headlineLink(home.text,home.url,article.title);
+   if(link)match={url:link};
+   // WordPress publishers expose older matching articles in their public search feed.
+   if(!match&&/wp-content|wp-includes/i.test(home.text)){
+    const search=new URL('/',origin);search.searchParams.set('s',article.title);search.searchParams.set('feed','rss2');
+    const results=parseFeed((await readPublic(search.href)).text,{name:article.source,kind:'direct',lang:article.lang},TOPICS[0]);
+    match=results.find(item=>key(item.title)===key(article.title));
+   }
+  }catch{}
+ }
  if(!match)return '';
  if(match.imageUrl&&!excluded.includes(match.imageUrl))return match.imageUrl;
  return articleImage(match.url,signal,excluded);

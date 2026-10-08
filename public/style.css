@@ -30,7 +30,7 @@
 .story-image,.card .story-image,.side-story .story-image,.feature .story-image{position:relative;display:flex;align-items:center;justify-content:center;width:160px;height:100px;max-width:100%;max-height:none;aspect-ratio:auto;margin:0 0 14px;border-radius:4px;background:#e5e9df;flex-shrink:0;align-self:flex-start;overflow:hidden}
 .feature .story-image{width:280px;height:158px;margin:0 0 16px;background:#303a32}
 .side-story .story-image{width:144px;height:90px}
-.story-image img,.card .story-image img{position:absolute;width:100%;height:100%;object-fit:contain;margin:0;display:block;opacity:0}
+.story-image img,.card .story-image img{position:absolute;width:100%;height:100%;object-fit:contain;margin:0;display:block;opacity:1}
 .story-image.has-image img{opacity:1}
 .image-placeholder{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:7px;padding:8px;color:#52644b;text-align:center;font-size:10px;line-height:1.3}
 .image-placeholder svg{width:40px;height:30px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
