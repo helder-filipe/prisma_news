@@ -43,12 +43,8 @@
 .infralobo-logo{display:block;width:110px;height:auto;object-fit:contain}
 @media(max-width:620px){.brand-lockup{gap:1px}.infralobo-logo{width:76px}}
 
-/* Compact pagination keeps only twenty article cards on screen. */
-#results{scroll-margin-top:16px}
-.pagination,.pagination-summary{color:#333d34;font-size:13px;margin:12px 0 24px}
-.pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid #cdd2c6;padding-top:14px}
-.pagination p{margin:0}.pagination-buttons{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
-.pagination button{font:inherit;color:#18241a;background:transparent;border:1px solid #a8b09f;border-radius:4px;min-width:36px;min-height:40px;padding:6px 10px;cursor:pointer}
-.pagination button[aria-current=page]{background:#233c2c;border-color:#233c2c;color:#fff}
-.pagination button:disabled{opacity:.4;cursor:default}.pagination button:focus-visible{outline:2px solid #233c2c;outline-offset:3px}
-@media(max-width:620px){.pagination{gap:8px;margin:8px 0 18px;font-size:12px}.pagination button{min-width:30px;min-height:40px;padding:5px 7px}.pagination-buttons{gap:4px}}
+/* Image-led continuous news list. */
+.story-image,.card .story-image{width:220px;height:138px}
+.side-story .story-image{width:180px;height:113px}
+.feature .story-image{width:380px;height:214px}
+@media(max-width:620px){.story-image,.card .story-image,.side-story .story-image{width:200px;height:125px}.feature .story-image{width:280px;height:158px}}

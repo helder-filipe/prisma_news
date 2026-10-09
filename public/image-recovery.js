@@ -33,6 +33,6 @@ export function createImageRecovery(root,onRecovered){
   imageFor(article){const state=record(article.url);return state?.result||(!state?.tried.has(article.imageUrl)?article.imageUrl:'')||'';},
   observe(){observer?.disconnect();for(const slot of root.querySelectorAll('.story-image'))if(!slot.querySelector('img')){if(observer)observer.observe(slot);else if(slot.getBoundingClientRect().top<innerHeight+250)schedule(slot);}},
   loaded(img){const url=img.closest('.story-image')?.dataset.articleUrl;if(url){record(url).result=img.src;saved.set(url,img.src);}},
-  failed(img){const slot=img.closest('.story-image');if(!slot)return;const state=record(slot.dataset.articleUrl);state.tried.add(img.src);state.result='';state.retryAt=0;saved.delete(slot.dataset.articleUrl);img.remove();fallback(slot);if(observer)observer.observe(slot);else schedule(slot);}
+  failed(img,{retry=true}={}){const slot=img.closest('.story-image');if(!slot)return;const state=record(slot.dataset.articleUrl);state.tried.add(img.src);state.result='';state.retryAt=0;saved.delete(slot.dataset.articleUrl);img.remove();fallback(slot);if(!retry)return;if(observer)observer.observe(slot);else schedule(slot);}
  };
 }
