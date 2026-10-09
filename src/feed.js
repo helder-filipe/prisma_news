@@ -36,16 +36,20 @@ const technicalRole=/^\s*["“«(]*tecnic(?:o|a)(?:\s*[/\\]\s*a|\s*\(a\))?(?=\s|
 const genderMarker=/(?:^|[^a-z])m\s*[/\\]\s*f(?:$|[^a-z])/i;
 export function isJobAdvertisement(title,description='',url='',source='',sourceURL=''){return /\b(?:trabajo\.org|talenter)\b/i.test(title+' '+description)||technicalRole.test(normalize(title))&&genderMarker.test(normalize(title+' '+description))|| isJobBoard(url,source)||isJobBoard(sourceURL,source)||jobAdTitle.test(title)||jobAdTitle.test(title.normalize('NFKD'))||technicalRole.test(normalize(title))&&/\bna empresa\b/i.test(title)&&/linkedin/i.test(source+' '+sourceURL)||jobAdCall.test(description)&&/\b(vaga|emprego|job|career|recruit|candidatur|application|cv|resume)\b/i.test(title+' '+description);}
 export function parseFeed(xml,def,topic,now=Date.now()){
- if(xml.length>2_000_000||/<!DOCTYPE|<!ENTITY/i.test(xml))throw new Error('Formato RSS não permitido');
+ if(xml.length>6_000_000||/<!DOCTYPE|<!ENTITY/i.test(xml))throw new Error('Formato RSS não permitido');
  if(XMLValidator.validate(xml)!==true)throw new Error('RSS inválido');
- const doc=parser.parse(xml);const channel=doc.rss?.channel;if(!channel)throw new Error('O endereço não devolveu um feed RSS');
- let rows=channel.item||[];if(!Array.isArray(rows))rows=[rows];
+ const doc=parser.parse(xml);const channel=doc.rss?.channel||doc.feed;if(!channel)throw new Error('O endereço não devolveu um feed RSS ou Atom');
+ const links=value=>[value||[]].flat();
+ const alternate=value=>links(value).find(link=>typeof link==='string'||!link['@_rel']||link['@_rel']==='alternate');
+ const linkValue=value=>typeof value==='object'?value?.['@_href']||text(value):value;
+ let rows=channel.item||channel.entry||[];if(!Array.isArray(rows))rows=[rows];
+ if(doc.feed)rows=rows.map(row=>({...row,link:linkValue(alternate(row.link)),pubDate:row.published||row.updated,description:row.summary||row.content,enclosure:links(row.link).filter(link=>link['@_rel']==='enclosure')}));
  const articles=[];const maxAge=30*86400000;
  for(const row of rows.slice(0,100)){
   const source=plain(row.source)||def.name;let title=plain(row.title);
   if(title.endsWith(' - '+source))title=title.slice(0,-source.length-3);
   const url=safeURL(row.link);const ms=Date.parse(text(row.pubDate));
-  const sourceURL=safeURL(row.source?.['@_url'])||safeURL(channel.link);
+  const sourceURL=safeURL(row.source?.['@_url'])||safeURL(linkValue(alternate(channel.link)));
   if(!title||!url||!Number.isFinite(ms)||ms>now+3600000||now-ms>maxAge)continue;
   const rawDescription=plain(row.description);
   // Google descriptions repeat headlines and source links; they are not article summaries.

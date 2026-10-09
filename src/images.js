@@ -19,7 +19,7 @@ function htmlImage(html,base){
 export function feedImage(row,base){
  const featured=imageURL(row.featured_image||row['featured-image']||row['post-thumbnail'],base);
  if(featured)return featured;
- const html=htmlImage([valueText(row['content:encoded']),valueText(row.description)].join(' '),base);if(html)return html;
+ const html=[valueText(row['content:encoded']),valueText(row.description),valueText(row.summary),valueText(row.content)].join(' ');
  const candidates=[];
  function visit(value){
   if(Array.isArray(value)){value.forEach(visit);return;}
@@ -32,8 +32,15 @@ export function feedImage(row,base){
   if(url&&!/\.(mp3|mp4|pdf|m4a|webm)(?:[?#]|$)/i.test(url))candidates.push({url,width:Number(value['@_width'])||0});
   for(const [key,child] of Object.entries(value))if(/^(?:(?:media:)?(?:thumbnail|enclosure|image|content|group)|itunes:image)$/i.test(key)&&!key.startsWith('@_'))visit(child);
  }
- for(const key of ['media:group','media:content','media:thumbnail','enclosure','itunes:image','image'])visit(row[key]);
- return candidates.sort((a,b)=>b.width-a.width)[0]?.url||'';
+ for(const key of ['media:group','media:content','enclosure'])visit(row[key]);
+ const media=candidates.sort((a,b)=>b.width-a.width)[0]?.url;
+ if(media)return media;
+ const inline=htmlImage(html,base);if(inline)return inline;
+ for(const key of ['media:thumbnail','itunes:image','image'])visit(row[key]);
+ const thumbnail=candidates.sort((a,b)=>b.width-a.width)[0]?.url;if(thumbnail)return thumbnail;
+ // Some feeds link to the original photograph instead of embedding an img tag.
+ for(const tag of html.match(/<a\b[^>]*>/gi)||[]){const url=imageURL(attrs(tag).href,base);if(/\.(?:jpe?g|png|webp|gif)(?:[?#]|$)/i.test(url))return url;}
+ return '';
 }
 export function pageImage(html,base,excluded=[]){
  const candidate=(value,base)=>{const url=imageURL(value,base);return excluded.includes(url)?'':url;};

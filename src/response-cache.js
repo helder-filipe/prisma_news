@@ -18,10 +18,10 @@ export function createResponseCache(storage){
   const url=new URL(request.url),topic=url.searchParams.get('topic')||'tudo';
   const article=url.searchParams.get('image'),excluded=url.searchParams.getAll('exclude').slice(0,4);
   const mode=url.searchParams.get('images')==='visible'?'visible':'eager';
-  const key='news:v4:'+JSON.stringify([topic,url.searchParams.get('sources')==='1',mode]);
+  const key='news:v5:'+JSON.stringify([topic,url.searchParams.get('sources')==='1',mode]);
   const cached=article?await image.get(article,excluded):await get(key);
   if(cached!==undefined)return response(cached,article,'HIT');
-  const knownNews=article?await get('news:v4:'+JSON.stringify([topic,false,mode])):undefined;
+  const knownNews=article?await get('news:v5:'+JSON.stringify([topic,false,mode])):undefined;
   const result=await run(image,knownNews);
   if(!result.ok)return result; // Never cache request validation errors or unavailable feeds.
   const data=await result.clone().json();

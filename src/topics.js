@@ -24,6 +24,8 @@ export const TOPICS = [
  {id:'cultura' ,label:'Cultura',pt:'("arte" OR "educação" OR "festival") (ambiente OR sustentabilidade OR reciclagem)',en:'"environmental art" OR "environmental education" OR "sustainability festival" OR "climate art"',match:'environmental art|climate art|eco art|arte ambiental|arte e sustentabilidade|environmental education|educacao ambiental|festival sustentavel|sustainability festival|cultura ambiental'}
 ];
 export const ADDITIONAL_NEWS_SOURCES = [
+ {id:'noticias-minuto',name:'Notícias ao Minuto',sourceURL:'https://www.noticiasaominuto.com/',feedURL:'https://www.noticiasaominuto.com/rss/ultima-hora',lang:'pt'},
+ {id:'un-news',name:'UN News',sourceURL:'https://news.un.org/',feedURL:'https://news.un.org/feed/subscribe/en/news/region/global/feed/rss.xml',lang:'en'},
  {id:'cm-loule',name:'Câmara Municipal de Loulé',domain:'cm-loule.pt',sourceURL:'https://www.cm-loule.pt/',lang:'pt'},
  {id:'voz-loule',name:'A Voz de Loulé',domain:'avozdeloule.com',sourceURL:'https://www.avozdeloule.com/',lang:'pt'},
  {id:'postal',name:'Postal do Algarve',sourceURL:'https://postal.pt/',feedURL:'https://postal.pt/feed/',lang:'pt'},
