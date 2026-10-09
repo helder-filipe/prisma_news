@@ -44,3 +44,11 @@ test('Observed agency and social recruitment offers are excluded',()=>{
  assert(isJobAdvertisement('𝙀𝙎𝙏𝘼𝙈𝙊𝙎 𝘼 𝙍𝙀𝘾𝙍𝙐𝙏𝘼𝙍 Técnico/a Superior de Segurança'));
  assert(isJobAdvertisement('Técnico Superior de Segurança no Trabalho na empresa Floema','','','LinkedIn','https://pt.linkedin.com/'));
 });
+
+test('Trabajo subdomains and Talenter references cannot enter any category, including standards',()=>{
+ assert(isJobAdvertisement('HSE Intern – ISO 14001','','https://news.google.com/rss/articles/a','Trabajo.org','https://pt.trabajo.org/'));
+ assert(isJobAdvertisement('Técnico de Qualidade — ISO 9001 | Melhoria Contínua em Miratejo - Talenter'));
+ assert(isJobAdvertisement('Técnico de Qualidade ISO 9001','Oferta da Talenter'));
+ assert(isJobAdvertisement('ISO 9001','','https://www.talenter.com/offer'));
+ assert.equal(isJobAdvertisement('Empresa certificada pela ISO 9001'),false);
+});
