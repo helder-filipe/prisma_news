@@ -19,9 +19,9 @@ export function languageOf(title,fallback){
  return {lang:fallback,languageMethod:'feed'};
 }
 export function classify(title,description){const content=normalize(title+' '+description);return TOPICS.filter(t=>t.match&&new RegExp(t.match).test(content)&&(!t.sector||new RegExp(t.sector).test(content))&&(t.id!=='normas'||isCertifiedStandardsOnly(title+' '+description))).map(t=>t.id);}
-const jobAdTitle=/\b(job|jobs|vacancy|vacancies|career|careers|hiring|recruitment|recruiting|employment opportunity|apply now|we are hiring|oferta de emprego|ofertas de emprego|anuncio de emprego|anúncio de emprego|recrutamento|recruta-se|estamos a contratar|vaga para|vagas para|candidate-se|candidaturas abertas)\b/i;
+const jobAdTitle=/\b(job|jobs|vacancy|vacancies|career|careers|hiring|recruitment|recruiting|employment opportunity|apply now|we are hiring|oferta de emprego|ofertas de emprego|anuncio de emprego|anúncio de emprego|recrutamento|recruta-se|estamos a contratar|estamos a recrutar|vaga para|vagas para|candidate-se|candidaturas abertas)\b/i;
 const jobAdCall=/\b(submeta|envie|enviar) (a sua )?candidatura\b|\bapply (now|today)\b|\bsend your (cv|resume)\b|\bsubmit your (application|cv)\b|\bjob description\b/i;
-const jobBoardDomains=['net-empregos.com','expressoemprego.pt','empregosonline.pt','empregos.pt','careerjet.pt','indeed.com','indeed.pt','glassdoor.com','jooble.org','talent.com','monster.com','infojobs.net','jobrapido.com','jobsora.com'];
+const jobBoardDomains=['adecco.com','adecco.pt','bizpliz.pt','net-empregos.com','expressoemprego.pt','empregosonline.pt','empregos.pt','careerjet.pt','indeed.com','indeed.pt','glassdoor.com','jooble.org','talent.com','monster.com','infojobs.net','jobrapido.com','jobsora.com'];
 function isJobBoard(url,source=''){
  try{
   const parsed=new URL(url);const host=parsed.hostname.toLowerCase();
@@ -31,7 +31,10 @@ function isJobBoard(url,source=''){
  }catch{}
  return /net[ -]?empregos|sapo[ -]?empregos|expresso[ -]?emprego|indeed|glassdoor|jooble|careerjet/i.test(source);
 }
-export function isJobAdvertisement(title,description='',url='',source='',sourceURL=''){return isJobBoard(url,source)||isJobBoard(sourceURL,source)||jobAdTitle.test(title)||jobAdCall.test(description)&&/\b(vaga|emprego|job|career|recruit|candidatur|application|cv|resume)\b/i.test(title+' '+description);}
+// Recruitment titles often omit the words 'emprego' or 'recrutamento'.
+const technicalRole=/^\s*["“«(]*tecnic(?:o|a)(?:\s*[/\\]\s*a|\s*\(a\))?(?=\s|[-–—:,(]|$)/i;
+const genderMarker=/(?:^|[^a-z])m\s*[/\\]\s*f(?:$|[^a-z])/i;
+export function isJobAdvertisement(title,description='',url='',source='',sourceURL=''){return technicalRole.test(normalize(title))&&genderMarker.test(normalize(title+' '+description))|| isJobBoard(url,source)||isJobBoard(sourceURL,source)||jobAdTitle.test(title)||jobAdTitle.test(title.normalize('NFKD'))||technicalRole.test(normalize(title))&&/\bna empresa\b/i.test(title)&&/linkedin/i.test(source+' '+sourceURL)||jobAdCall.test(description)&&/\b(vaga|emprego|job|career|recruit|candidatur|application|cv|resume)\b/i.test(title+' '+description);}
 export function parseFeed(xml,def,topic,now=Date.now()){
  if(xml.length>2_000_000||/<!DOCTYPE|<!ENTITY/i.test(xml))throw new Error('Formato RSS não permitido');
  if(XMLValidator.validate(xml)!==true)throw new Error('RSS inválido');

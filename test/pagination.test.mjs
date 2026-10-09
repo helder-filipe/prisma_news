@@ -15,7 +15,7 @@ test('Visible-image mode returns news without crawling images for undisplayed ar
  const saved=globalThis.fetch,calls=[];
  globalThis.fetch=async url=>{calls.push(String(url));return new Response(`<rss><channel><link>https://page-test.test/</link><item><title>Water infrastructure for sustainable cities</title><link>https://page-test.test/article</link><pubDate>${new Date().toUTCString()}</pubDate></item></channel></rss>`);};
  try{
-  const result=await worker.fetch(new Request('https://prisma.test/api/news?topic=agua&images=visible'),{},{waitUntil:p=>p.catch(()=>{})});
-  assert((await result.json()).items.length>0);assert(!calls.includes('https://page-test.test/article'));
+  const result=await worker.fetch(new Request('https://prisma.test/api/news?topic=agua&images=visible'),{imageCache:{get:async()=>({imageUrl:'https://images.test/cached.jpg'})}},{waitUntil:p=>p.catch(()=>{})});
+  const data=await result.json();assert(data.items.length>0);assert.equal(data.items[0].imageUrl,'https://images.test/cached.jpg');assert(!calls.includes('https://page-test.test/article'));
  }finally{globalThis.fetch=saved;}
 });

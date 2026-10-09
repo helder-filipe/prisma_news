@@ -12,7 +12,7 @@ export function createImageRecovery(root,onRecovered){
   if(active>=2||!queue.length)return;
   const {url,topic}=queue.shift(),state=record(url);
   const visible=[...root.querySelectorAll('.story-image')].some(slot=>slot.dataset.articleUrl===url&&!slot.querySelector('img')&&slot.getBoundingClientRect().bottom>=-250&&slot.getBoundingClientRect().top<innerHeight+250);
-  if(!visible){state.pending=false;pump();return;}
+  if(!visible){state.pending=false;for(const slot of root.querySelectorAll('.story-image'))if(slot.dataset.articleUrl===url&&!slot.querySelector('img'))observer?.observe(slot);pump();return;}
   state.attempts++;active++;
   try{
    const params=new URLSearchParams({topic,image:url,images:'visible'});for(const image of state.tried)params.append('exclude',image);

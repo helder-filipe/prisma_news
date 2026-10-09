@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseFeed,mergeArticles,languageOf,safeURL} from '../src/feed.js';
+import {parseFeed,mergeArticles,languageOf,safeURL,isJobAdvertisement} from '../src/feed.js';
 import {TOPICS,feedDefinitions} from '../src/topics.js';
 const topic=TOPICS.find(t=>t.id==='biorresiduos');
 const def={name:'Fonte',kind:'aggregator',lang:'en',id:'test'};
@@ -30,3 +30,17 @@ test('Extrai miniaturas RSS e imagens do excerto, mantendo URLs seguras',()=>{
 test('Duplicados conservam ligação direta e todos os temas',()=>{const a={title:'Compostagem: nova iniciativa',date:'2026-09-25',topics:['biorresiduos'],via:'Google Notícias',url:'https://news.google.com/a'};const b={...a,topics:['residuos'],via:'RSS direto',url:'https://example.org/a'};const list=mergeArticles([[a],[b]]);assert.equal(list.length,1);assert.equal(list[0].url,b.url);assert.equal(list[0].topics.length,2);});
 test('Rejeita HTML e entidades XML declaradas',()=>{assert.throws(()=>parseFeed('<html>Erro</html>',def,topic));assert.throws(()=>parseFeed('<!DOCTYPE rss [<!ENTITY x "boom">]><rss/>',def,topic));});
 test('A pesquisa unificada consulta fontes em português, inglês e sites institucionais',()=>{for(const id of ['agua','residuos','biorresiduos','infraestruturas','espacos-verdes','urbanismo','mobilidade','sustentabilidade']){const t=TOPICS.find(t=>t.id===id);assert(t);const defs=feedDefinitions(t);assert(defs.some(d=>d.lang==='pt'));assert(defs.some(d=>d.lang==='en'));assert(defs.every(d=>d.url.startsWith('https://')));for(const domain of ['ersar.pt','apambiente.pt','adp.pt','apda.pt'])assert(defs.some(d=>d.site===domain));assert(defs.some(d=>d.name==='Google News · English'));assert(!defs.some(d=>d.name.includes('Internacional')));}});
+
+test('Technical recruitment titles with gender markers are excluded without removing editorial titles',()=>{
+ for(const title of ['Técnico/a de Higiene e Segurança no Trabalho (m/f)','TÉCNICO/A SUPERIOR DE SEGURANÇA (M/F)','Técnico (a) de ambiente - M / F','Tecnico de segurança – m/f','Técnica de segurança (M/F)'])assert.equal(isJobAdvertisement(title),true,title);
+ assert.equal(isJobAdvertisement('Técnico/a de segurança','Função em Loulé (M/F)'),true);
+ for(const title of ['Técnico de segurança explica as novas medidas','Técnica reduz acidentes de trabalho','Formação em Higiene e Segurança no Trabalho'])assert.equal(isJobAdvertisement(title),false,title);
+});
+
+
+test('Observed agency and social recruitment offers are excluded',()=>{
+ assert(isJobAdvertisement('Técnico de Higiene e Segurança no Trabalho - Aveiro','','','Adecco','https://www.adecco.com/'));
+ assert(isJobAdvertisement('TÉCNICO/A DE SEGURANÇA NO TRABALHO — Ditame','','','BizPliz!','https://bizpliz.pt/'));
+ assert(isJobAdvertisement('𝙀𝙎𝙏𝘼𝙈𝙊𝙎 𝘼 𝙍𝙀𝘾𝙍𝙐𝙏𝘼𝙍 Técnico/a Superior de Segurança'));
+ assert(isJobAdvertisement('Técnico Superior de Segurança no Trabalho na empresa Floema','','','LinkedIn','https://pt.linkedin.com/'));
+});

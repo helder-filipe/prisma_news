@@ -56,6 +56,14 @@ async function hydrateImages(items,imageCache){
   while(cursor<candidates.length&&!budgetSignal.aborted){const item=candidates[cursor++];const cached=await imageCache?.get(item.url);if(cached!==undefined){item.imageUrl=cached.imageUrl||'';continue;}item.imageUrl=await articleImage(item.url,budgetSignal);}
  }));
 }
+async function restoreImages(items,imageCache){
+ if(!imageCache)return;
+ const missing=items.filter(item=>!item.imageUrl),deadline=Date.now()+500;let cursor=0;
+ // Reuse known images in the news response without revisiting publisher pages.
+ await Promise.all(Array.from({length:Math.min(12,missing.length)},async()=>{
+  while(cursor<missing.length&&Date.now()<deadline){const item=missing[cursor++];try{const cached=await imageCache.get(item.url);if(cached?.imageUrl)item.imageUrl=cached.imageUrl;}catch{}}
+ }));
+}
 async function getFeed(def,topic,request,ctx){
  const cacheKey=new Request(new URL('/__rss_cache/v4/'+encodeURIComponent(def.url),request.url));
  const cache=globalThis.caches?.default;
@@ -141,7 +149,7 @@ export default {async fetch(request,env,ctx){
    return json({imageUrl});
   }
   for(const item of items)item.imageTopic=topic.id;
-  if(!sourcesOnly&&url.searchParams.get('images')!=='visible')await hydrateImages(items,env?.imageCache);const available=outcomes.filter(o=>o.state!=='error');
+  if(!sourcesOnly){if(url.searchParams.get('images')==='visible')await restoreImages(items,env?.imageCache);else await hydrateImages(items,env?.imageCache);}const available=outcomes.filter(o=>o.state!=='error');
   return json({topic:topic.id,items,sources,checkedAt:new Date().toISOString(),partial:outcomes.some(o=>o.state!=='ok'),refreshMinutes:15},available.length?200:503);
  }
  const assets={'/icons/prisma-verde.svg':[prismaIcon,'image/svg+xml'],'/icons/favicon-32.png':[favicon,'image/png'],'/icons/apple-touch-icon.png':[appleIcon,'image/png'],'/icons/icon-192.png':[icon192,'image/png'],'/icons/icon-512.png':[icon512,'image/png'],'/manifest.webmanifest':[manifest,'application/manifest+json'],'/infralobo-logo.png':[infraloboLogo,'image/png'],'/':[html,'text/html; charset=utf-8'],'/index.html':[html,'text/html; charset=utf-8'],'/sources':[sources,'text/html; charset=utf-8'],'/sources.html':[sources,'text/html; charset=utf-8'],'/style.css':[css,'text/css; charset=utf-8'],'/app.js':[app,'application/javascript; charset=utf-8'],'/sources.js':[sourcesApp,'application/javascript; charset=utf-8']};
