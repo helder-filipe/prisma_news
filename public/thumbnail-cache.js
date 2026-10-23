@@ -1,4 +1,4 @@
-const KEY='prisma:thumbnails:v1',TTL=7*86400000,MISS=10*60000;
+const KEY='prisma:thumbnails:v2',TTL=7*86400000,MISS=2*60000;
 export function createThumbnailCache(storage,now=()=>Date.now()){
  let entries={};try{const parsed=JSON.parse(storage?.getItem(KEY)||'{}');if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))entries=parsed;}catch{}
  const valid=entry=>entry&&Number.isFinite(entry.expiresAt)&&entry.expiresAt>now()&&typeof entry.imageUrl==='string'&&(!entry.imageUrl||/^https?:\/\//i.test(entry.imageUrl));

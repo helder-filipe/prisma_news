@@ -3,3 +3,5 @@
 Notícias setoriais para os profissionais da Infralobo, em português e inglês. Recolha automática, categorias, pesquisa, ordenação, partilha e impressão em PDF.
 
 A cobertura editorial tem prioridade sobre as imagens: incluir notícias relevantes mesmo sem miniatura. Português predefinido. Lista contínua sem paginação.
+
+Miniaturas: para notícias Google, chegar ao artigo original antes de procurar a fotografia. Medir recuperação com notícias reais, sem substituir imagens por fotografias genéricas nem retirar notícias sem imagem.

@@ -5,6 +5,7 @@ import icon192 from '../public/icons/icon-192.png';
 import icon512 from '../public/icons/icon-512.png';
 import manifest from '../public/manifest.webmanifest';
 import {pageImage,rssLinks,headlineLink} from './images.js';
+import {createGoogleNewsResolver} from './google-news.js';
 import html from '../public/index.html';
 import sources from '../public/sources.html';
 import css from '../public/style.css';
@@ -20,7 +21,7 @@ function json(data,status=200){return new Response(JSON.stringify(data),{status,
 function safePublicURL(value,base){
  try{
   const u=new URL(value,base);if(!['https:','http:'].includes(u.protocol)||u.username||u.password)return null;
-  const h=u.hostname.toLowerCase();if(!h||h==='localhost'||h.endsWith('.localhost')||h.endsWith('.local')||h==='::1'||h==='0.0.0.0')return null;
+  const h=u.hostname.toLowerCase();if(!h||h==='localhost'||h.endsWith('.localhost')||h.endsWith('.local')||h==='[::1]'||h==='[::]'||h.startsWith('[::ffff:')||h==='0.0.0.0')return null;
   const ip=h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if(ip){const [a,b]=ip.slice(1).map(Number);if([0,10,127].includes(a)||a>=224||a===169&&b===254||a===192&&b===168||a===172&&b>=16&&b<=31)return null;}
   if(h.startsWith('[fc')||h.startsWith('[fd')||h.startsWith('[fe80:'))return null;
@@ -33,6 +34,7 @@ async function readHTML(response,maxBytes=500_000){
  try{while(total<maxBytes){const {done,value}=await reader.read();if(done)break;const chunk=value.subarray(0,maxBytes-total);chunks.push(chunk);total+=chunk.length;if(chunk.length<value.length)break;}}finally{try{await reader.cancel();}catch{}}
  const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}return new TextDecoder().decode(bytes);
 }
+const googleArticle=createGoogleNewsResolver({readText:response=>readHTML(response,1_500_000)});
 async function articleImage(articleURL,budgetSignal,excluded=[]){
  const now=Date.now(),cached=imageMemory.get(articleURL);if(!excluded.length&&cached&&now-cached.at<(cached.url?6:0.5)*60*60*1000)return cached.url||'';
  let current=safePublicURL(articleURL);if(!current)return '';
@@ -53,7 +55,7 @@ async function hydrateImages(items,imageCache){
  const candidates=items.filter(item=>!item.imageUrl).sort((a,b)=>Number(a.url.includes('news.google.com/'))-Number(b.url.includes('news.google.com/')));
  const budgetSignal=AbortSignal.timeout(7500);let cursor=0;
  await Promise.all(Array.from({length:Math.min(12,candidates.length)},async()=>{
-  while(cursor<candidates.length&&!budgetSignal.aborted){const item=candidates[cursor++];const cached=await imageCache?.get(item.url);if(cached!==undefined){item.imageUrl=cached.imageUrl||'';continue;}item.imageUrl=await articleImage(item.url,budgetSignal);}
+  while(cursor<candidates.length&&!budgetSignal.aborted){const item=candidates[cursor++];const cached=await imageCache?.get(item.url);if(cached!==undefined){item.imageUrl=cached.imageUrl||'';continue;}item.imageUrl=await resolveArticleImage(item,budgetSignal);}
  }));
 }
 async function restoreImages(items,imageCache){
@@ -124,6 +126,20 @@ async function publisherImage(article,signal,excluded){
  if(match.imageUrl&&!excluded.includes(match.imageUrl))return match.imageUrl;
  return articleImage(match.url,signal,excluded);
 }
+async function resolveArticleImage(article,signal,excluded=[]){
+ const google=new URL(article.url).hostname==='news.google.com';
+ if(google){
+  const original=await googleArticle(article.url,signal);
+  if(original&&safePublicURL(original)&&!signal.aborted){
+   const image=await articleImage(original,signal,excluded);if(image)return image;
+  }
+ }else{
+  const image=await articleImage(article.url,signal,excluded);if(image)return image;
+ }
+ // Exact publisher RSS/headline matching remains the fallback when decoding or
+ // article metadata is unavailable. Never use the Google splash-page image.
+ return signal.aborted?'':publisherImage(article,signal,excluded);
+}
 const assetHeaders={'X-Content-Type-Options':'nosniff','Referrer-Policy':'strict-origin-when-cross-origin'};
 export default {async fetch(request,env,ctx){
  const url=new URL(request.url);
@@ -140,12 +156,9 @@ export default {async fetch(request,env,ctx){
   if(imageRequest){
    // Resolve only an article actually returned by these feeds, never arbitrary user URLs.
    const article=items.find(item=>item.url===imageRequest);if(!article)return json({imageUrl:''},404);
-   const excluded=url.searchParams.getAll('exclude').slice(0,4);const signal=AbortSignal.timeout(10000);
+   const excluded=url.searchParams.getAll('exclude').slice(0,4);const signal=AbortSignal.timeout(12000);
    let imageUrl=article.imageUrl&&!excluded.includes(article.imageUrl)?article.imageUrl:'';
-   const google=new URL(article.url).hostname==='news.google.com';
-   if(!imageUrl&&google)imageUrl=await publisherImage(article,signal,excluded);
-   if(!imageUrl&&!signal.aborted)imageUrl=await articleImage(article.url,signal,excluded.length?excluded:['']);
-   if(!imageUrl&&!google&&!signal.aborted)imageUrl=await publisherImage(article,signal,excluded);
+   if(!imageUrl)imageUrl=await resolveArticleImage(article,signal,excluded.length?excluded:['']);
    return json({imageUrl});
   }
   for(const item of items)item.imageTopic=topic.id;

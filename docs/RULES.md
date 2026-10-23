@@ -7,3 +7,6 @@
 - Preservar filtros temáticos, datas e ligações às fontes.
 - Validar alterações com build e testes relevantes antes de publicar.
 - Manter os seis documentos desta pasta atualizados.
+
+- A página intermediária Google não é o artigo: resolver a ligação original antes de ler os metadados de imagem.
+- Parar perante páginas de consentimento, desafios ou erros; manter o fallback RSS exato. Não guardar assinaturas de resolução.
