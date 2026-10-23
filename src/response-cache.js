@@ -1,6 +1,6 @@
 // Shared caches contain public feed data and image URLs, never image file copies.
-export const IMAGE_TTL=7*86400, MISS_TTL=10*60, NEWS_TTL=15*60;
-const imageKey=(url,excluded=[])=>'image:v1:'+JSON.stringify([url,[...new Set(excluded)].sort()]);
+export const IMAGE_TTL=7*86400, MISS_TTL=2*60, NEWS_TTL=15*60;
+const imageKey=(url,excluded=[])=>'image:v2:'+JSON.stringify([url,[...new Set(excluded)].sort()]);
 export function createResponseCache(storage){
  async function bounded(job){let timer;try{return await Promise.race([job,new Promise(resolve=>{timer=setTimeout(resolve,800);})]);}catch{return undefined;}finally{clearTimeout(timer);}}
  async function get(key){
@@ -18,10 +18,10 @@ export function createResponseCache(storage){
   const url=new URL(request.url),topic=url.searchParams.get('topic')||'tudo';
   const article=url.searchParams.get('image'),excluded=url.searchParams.getAll('exclude').slice(0,4);
   const mode=url.searchParams.get('images')==='visible'?'visible':'eager';
-  const key='news:v5:'+JSON.stringify([topic,url.searchParams.get('sources')==='1',mode]);
+  const key='news:v6:'+JSON.stringify([topic,url.searchParams.get('sources')==='1',mode]);
   const cached=article?await image.get(article,excluded):await get(key);
   if(cached!==undefined)return response(cached,article,'HIT');
-  const knownNews=article?await get('news:v5:'+JSON.stringify([topic,false,mode])):undefined;
+  const knownNews=article?await get('news:v6:'+JSON.stringify([topic,false,mode])):undefined;
   const result=await run(image,knownNews);
   if(!result.ok)return result; // Never cache request validation errors or unavailable feeds.
   const data=await result.clone().json();
