@@ -21,7 +21,7 @@ test('Preview metadata supports relative URLs, unquoted attributes and numeric e
 });
 test('Article structured data and lazy article images provide fallbacks without publisher logos',()=>{
  const data={'@graph':[{'@type':'Organization',logo:'https://cdn.example/logo.png'},{'@type':'NewsArticle',image:[{'@type':'ImageObject',contentUrl:'https://cdn.example/article.jpg'}]}]};
- assert.equal(pageImage(\`<script type="application/ld+json">\${JSON.stringify(data)}</script>\`,base),'https://cdn.example/article.jpg');
+ assert.equal(pageImage('<script type="application/ld+json">'+JSON.stringify(data)+'</script>',base),'https://cdn.example/article.jpg');
  assert.equal(pageImage('<header><img src="/logo.png"></header><article><img data-lazy-src="/story.jpg"></article>',base),'https://publisher.example/story.jpg');
  assert.equal(pageImage('<header><img src="/logo.png"></header>',base),'');
  assert.equal(pageImage('<meta property="og:image" content="javascript:alert(1)">',base),'');
@@ -39,8 +39,8 @@ test('Image lookup covers more than the former 16-article limit',async()=>{
  const originalFetch=globalThis.fetch;let lookups=0;
  globalThis.fetch=async(url,options={})=>{
   if(String(options.headers?.Accept||'').startsWith('text/html')){lookups++;return new Response('<meta property="og:image" content="https://cdn.example/article.jpg">',{headers:{'Content-Type':'text/html'}});}
-  const items=Array.from({length:24},(_,i)=>\`<item><title>Water infrastructure project \${i}</title><link>https://publisher.example/news/\${i}</link><pubDate>\${new Date().toUTCString()}</pubDate></item>\`).join('');
-  return new Response(\`<rss><channel><link>https://publisher.example</link>\${items}</channel></rss>\`);
+  const items=Array.from({length:24},(_,i)=>'<item><title>Water infrastructure project '+i+'</title><link>https://publisher.example/news/'+i+'</link><pubDate>'+new Date().toUTCString()+'</pubDate></item>').join('');
+  return new Response('<rss><channel><link>https://publisher.example</link>'+items+'</channel></rss>');
  };
  try{
   const response=await worker.fetch(new Request('https://prisma.test/api/news?topic=tudo'),{},{waitUntil:p=>p.catch(()=>{})});
