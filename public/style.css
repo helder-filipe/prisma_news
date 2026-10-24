@@ -44,7 +44,7 @@
 @media(max-width:620px){.brand-lockup{gap:1px}.infralobo-logo{width:76px}}
 
 /* Image-led continuous news list. */
-.story-image,.card .story-image{width:220px;height:138px}
-.side-story .story-image{width:180px;height:113px}
-.feature .story-image{width:380px;height:214px}
-@media(max-width:620px){.story-image,.card .story-image,.side-story .story-image{width:200px;height:125px}.feature .story-image{width:280px;height:158px}}
+.story-image,.card .story-image{width:250px;height:156px}
+.side-story .story-image{width:200px;height:125px}
+.feature .story-image{width:420px;height:236px}
+@media(max-width:620px){.story-image,.card .story-image,.side-story .story-image{width:220px;height:138px}.feature .story-image{width:300px;height:169px}}
